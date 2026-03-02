@@ -1,0 +1,15 @@
+{
+  "name": "recolector_lsp",
+  "version": "1.0.0",
+  "description": "Este proyecto es una aplicación web diseñada para recolectar datos en video y coordenadas (usando MediaPipe) de Lenguaje de Señas Peruano, con el fin de generar un dataset estandarizado para entrenar modelos de Inteligencia Artificial.",
+  "main": "google_apps_script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "sass": "^1.97.3"
+  }
+}
