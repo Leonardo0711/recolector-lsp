@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Recolector LSP | Lenguaje de Señas Peruano</title>
     <meta name="description"
-        content="Recolecta datos de video en Lenguaje de Señas Peruano para entrenar modelos de IA.">
+        content="Ayuda a construir la primera base de datos abierta de Lenguaje de Señas Peruano para entrenar Inteligencia Artificial.">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
         rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -21,9 +21,86 @@
     <!-- Fondo animado -->
     <div class="animated-bg"></div>
 
-    <main class="app-container">
+    <!-- ==================== LANDING / HERO ==================== -->
+    <section class="landing" id="landing">
+        <div class="landing-content">
+            <div class="landing-badge">
+                <i class="fa-solid fa-flask"></i> Proyecto de Investigación — Universidad
+            </div>
 
-        <!-- ==================== SIDEBAR (Desktop) ==================== -->
+            <h1 class="landing-title">
+                Ayúdanos a construir la primera
+                <span class="gradient-text">IA de Lenguaje de Señas Peruano</span>
+            </h1>
+
+            <p class="landing-description">
+                Estamos recolectando videos de señas para crear una base de datos abierta que permita entrenar
+                modelos de Inteligencia Artificial capaces de <strong>traducir el Lenguaje de Señas Peruano
+                    (LSP)</strong>
+                en tiempo real. Tu contribución de unos minutos puede cambiar la vida de miles de personas sordas en
+                Perú.
+            </p>
+
+            <div class="landing-stats">
+                <div class="stat-item">
+                    <i class="fa-solid fa-video"></i>
+                    <div>
+                        <span class="stat-label">Formato</span>
+                        <span class="stat-value">Video HD 1080p</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <i class="fa-solid fa-clock"></i>
+                    <div>
+                        <span class="stat-label">Tiempo</span>
+                        <span class="stat-value">~3 min por seña</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <div>
+                        <span class="stat-label">Privacidad</span>
+                        <span class="stat-value">Solo uso académico</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="landing-how">
+                <h3><i class="fa-solid fa-list-check"></i> ¿Cómo funciona?</h3>
+                <div class="steps-grid">
+                    <div class="step-item">
+                        <div class="step-number">1</div>
+                        <p>Crea tu <strong>perfil</strong> (nombre o alias).</p>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">2</div>
+                        <p>Elige si grabarás una <strong>palabra</strong> o una <strong>oración</strong>.</p>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">3</div>
+                        <p>Escribe el texto y <strong>graba la seña</strong> frente a tu cámara.</p>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">4</div>
+                        <p>El video se <strong>sube automáticamente</strong> a nuestra base de datos.</p>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-cta" id="btnParticipar">
+                <i class="fa-solid fa-hand-fist"></i> ¡Quiero Participar!
+            </button>
+
+            <p class="landing-footer-text">
+                <i class="fa-solid fa-lock"></i> No se requiere registro. Tus datos solo se usarán para investigación.
+            </p>
+        </div>
+    </section>
+
+    <!-- ==================== APP (Grabador) — OCULTO AL INICIO ==================== -->
+    <main class="app-container hidden" id="appContainer">
+
+        <!-- SIDEBAR (Desktop) -->
         <aside class="sidebar" id="sidebar">
             <div class="brand">
                 <div class="brand-icon">
@@ -99,22 +176,13 @@
                 </div>
             </div>
 
-            <!-- Instructions: mini -->
-            <div class="instructions glass">
-                <details>
-                    <summary><i class="fa-solid fa-circle-info"></i> ¿Cómo funciona?</summary>
-                    <ol>
-                        <li>Permite el acceso a la cámara.</li>
-                        <li>Ubícate a 1 metro, asegurando que se vean tus brazos.</li>
-                        <li>Elige <strong>Palabra</strong> u <strong>Oración</strong>, escribe el texto.</li>
-                        <li>Presiona <strong>Grabar</strong> y haz la seña.</li>
-                        <li>Presiona <strong>Detener</strong>. La subida es automática.</li>
-                    </ol>
-                </details>
-            </div>
+            <!-- Back to landing -->
+            <button class="btn-back" id="btnBackToLanding">
+                <i class="fa-solid fa-arrow-left"></i> Volver al inicio
+            </button>
         </aside>
 
-        <!-- ==================== VIDEO SECTION ==================== -->
+        <!-- VIDEO SECTION -->
         <section class="video-section">
             <div class="video-container" id="videoContainer">
                 <video id="webcam" autoplay playsinline muted></video>
@@ -130,7 +198,7 @@
                 <!-- Overlay: Controles flotantes (Mobile) -->
                 <div class="overlay-bottom" id="overlayBottom">
                     <button id="btnStartCameraMobile" class="btn btn-primary btn-glow btn-float">
-                        <i class="fa-solid fa-video"></i> Iniciar Cámara
+                        <i class="fa-solid fa-video"></i> Iniciar
                     </button>
                     <button id="btnRecordMobile" class="btn btn-record btn-glow btn-float" disabled>
                         <i class="fa-solid fa-circle"></i> Grabar

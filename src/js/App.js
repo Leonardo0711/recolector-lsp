@@ -3,6 +3,29 @@ import { RecorderManager } from "./RecorderManager.js";
 import { UIController } from "./UIController.js";
 import { DriveUploader } from "./DriveUploader.js";
 
+// Page transition elements
+const landing = document.getElementById('landing');
+const appContainer = document.getElementById('appContainer');
+const btnParticipar = document.getElementById('btnParticipar');
+const btnBackToLanding = document.getElementById('btnBackToLanding');
+
+// Landing → App transition
+btnParticipar.addEventListener('click', () => {
+    landing.classList.add('fade-out');
+    setTimeout(() => {
+        landing.classList.add('hidden');
+        appContainer.classList.remove('hidden');
+        appContainer.classList.add('fade-in');
+    }, 350);
+});
+
+// App → Landing transition (back button)
+btnBackToLanding.addEventListener('click', () => {
+    appContainer.classList.remove('fade-in');
+    appContainer.classList.add('hidden');
+    landing.classList.remove('hidden', 'fade-out');
+});
+
 class App {
     constructor() {
         this.ui = new UIController();
