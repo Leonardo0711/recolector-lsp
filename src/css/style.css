@@ -40,9 +40,9 @@
   --bg-input: rgba(240, 242, 248, 0.8);
   --bg-input-border: rgba(124, 92, 252, 0.18);
   --bg-video: #e8eaf2;
-  --text-main: #1a1c2e;
-  --text-secondary: #4a4e6a;
-  --text-muted: #8890b0;
+  --text-main: #0a0b12;
+  --text-secondary: #2c304d;
+  --text-muted: #505570;
   --primary: #6c4ce6;
   --primary-glow: rgba(108, 76, 230, 0.25);
   --primary-hover: #5a3dd0;
@@ -308,9 +308,9 @@ body {
 }
 .input-group input[type=text] {
   flex: 1;
-  background: rgba(10, 11, 16, 0.6);
-  border: 1px solid rgba(100, 110, 160, 0.2);
-  color: white;
+  background: var(--bg-input);
+  border: 1px solid var(--bg-input-border);
+  color: var(--text-main);
   padding: 12px 16px;
   border-radius: var(--radius-sm);
   font-size: 0.95rem;
@@ -349,9 +349,9 @@ body {
   width: 44px;
   height: 44px;
   flex-shrink: 0;
-  border: 1px solid rgba(100, 110, 160, 0.2);
+  border: 1px solid var(--bg-input-border);
   border-radius: var(--radius-sm);
-  background: rgba(10, 11, 16, 0.6);
+  background: var(--bg-input);
   color: var(--text-secondary);
   cursor: pointer;
   display: flex;
@@ -374,10 +374,10 @@ body {
 .tipo-toggle {
   display: flex;
   position: relative;
-  background: rgba(10, 11, 16, 0.5);
+  background: var(--bg-input);
   border-radius: var(--radius-sm);
   padding: 4px;
-  border: 1px solid rgba(100, 110, 160, 0.15);
+  border: 1px solid var(--bg-input-border);
 }
 .tipo-toggle .tipo-option {
   flex: 1;
@@ -1054,7 +1054,7 @@ body {
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  border: 1px solid rgba(100, 110, 160, 0.2);
+  border: 1px solid var(--bg-input-border);
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-muted);
