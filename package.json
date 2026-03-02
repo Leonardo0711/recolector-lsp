@@ -4,12 +4,15 @@
   "description": "Este proyecto es una aplicación web diseñada para recolectar datos en video y coordenadas (usando MediaPipe) de Lenguaje de Señas Peruano, con el fin de generar un dataset estandarizado para entrenar modelos de Inteligencia Artificial.",
   "main": "google_apps_script.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "sass": "^1.97.3"
+    "sass": "^1.97.3",
+    "vite": "^7.3.1"
   }
 }
