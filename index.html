@@ -3,58 +3,89 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Recolector LSP | Lenguaje de Señas Peruano</title>
+    <meta name="description"
+        content="Recolecta datos de video en Lenguaje de Señas Peruano para entrenar modelos de IA.">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Stylesheet (Vite compila el SCSS al vuelo) -->
     <link rel="stylesheet" href="./src/scss/style.scss">
 </head>
 
-<body class="theme-dark">
+<body>
+
+    <!-- Fondo animado -->
+    <div class="animated-bg"></div>
 
     <main class="app-container">
 
-        <!-- Sidebar / Formulario -->
-        <aside class="sidebar">
+        <!-- ==================== SIDEBAR (Desktop) ==================== -->
+        <aside class="sidebar" id="sidebar">
             <div class="brand">
-                <i class="fa-solid fa-hands-asl-interpreting"></i>
-                <h1>DataCollect <span>LSP</span></h1>
+                <div class="brand-icon">
+                    <i class="fa-solid fa-hands-asl-interpreting"></i>
+                </div>
+                <div>
+                    <h1>DataCollect <span>LSP</span></h1>
+                    <p class="brand-subtitle">Lenguaje de Señas Peruano</p>
+                </div>
             </div>
 
-            <div class="card form-container">
-                <h2>1. Identificación</h2>
+            <!-- Card: Perfil -->
+            <div class="card glass">
+                <div class="card-header">
+                    <i class="fa-solid fa-user-tag"></i>
+                    <h2>Perfil</h2>
+                </div>
                 <div class="input-group">
-                    <label for="perfilInput">Perfil / Usuario <span class="required">*</span></label>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="perfilInput" placeholder="Ej. MARIAM" autocomplete="off"
-                            style="text-transform: uppercase; flex: 1;">
-                        <button id="btnLockPerfil" class="btn btn-primary" style="width: auto; padding: 0 16px;"
-                            title="Bloquear Perfil"><i class="fa-solid fa-lock" id="iconLockPerfil"></i></button>
+                    <div class="input-row">
+                        <input type="text" id="perfilInput" placeholder="Ej. MARIA" autocomplete="off">
+                        <button id="btnLockPerfil" class="btn-icon btn-lock" title="Bloquear Perfil">
+                            <i class="fa-solid fa-lock-open" id="iconLockPerfil"></i>
+                        </button>
                     </div>
-                    <small>Se guardará en tu navegador.</small>
+                    <small><i class="fa-solid fa-bookmark"></i> Se guardará en tu navegador</small>
+                </div>
+            </div>
+
+            <!-- Card: Tipo + Palabra -->
+            <div class="card glass">
+                <div class="card-header">
+                    <i class="fa-solid fa-language"></i>
+                    <h2>¿Qué grabarás?</h2>
                 </div>
 
-                <hr>
-
-                <h2>2. Palabra a Grabar</h2>
-                <div class="input-group">
-                    <label for="palabraInput">Palabra / Oración <span class="required">*</span></label>
-                    <input type="text" id="palabraInput" placeholder="Ej. GRACIAS" autocomplete="off"
-                        style="text-transform: uppercase;">
-                    <small>Subcarpeta y nombre del archivo.</small>
+                <!-- Toggle Palabra / Oración -->
+                <div class="tipo-toggle" id="tipoToggle">
+                    <button class="tipo-option active" data-tipo="PALABRAS">
+                        <i class="fa-solid fa-font"></i> Palabra
+                    </button>
+                    <button class="tipo-option" data-tipo="ORACIONES">
+                        <i class="fa-solid fa-quote-left"></i> Oración
+                    </button>
+                    <div class="tipo-slider"></div>
                 </div>
 
-                <div class="controls status-ready">
-                    <button id="btnStartCamera" class="btn btn-primary">
+                <div class="input-group" style="margin-top: 16px;">
+                    <input type="text" id="palabraInput" placeholder="Ej. GRACIAS" autocomplete="off">
+                    <small><i class="fa-solid fa-folder-tree"></i> Subcarpeta destino en Drive</small>
+                </div>
+            </div>
+
+            <!-- Card: Controles -->
+            <div class="card glass controls-card">
+                <div class="desktop-controls">
+                    <button id="btnStartCamera" class="btn btn-primary btn-glow">
                         <i class="fa-solid fa-video"></i> Iniciar Cámara
                     </button>
-                    <button id="btnRecord" class="btn btn-record" disabled>
+                    <button id="btnRecord" class="btn btn-record btn-glow" disabled>
                         <i class="fa-solid fa-circle"></i> Grabar Seña
                     </button>
-                    <button id="btnStop" class="btn btn-stop hidden">
+                    <button id="btnStop" class="btn btn-stop btn-glow hidden">
                         <i class="fa-solid fa-square"></i> Detener
                     </button>
                 </div>
@@ -66,38 +97,60 @@
                         <div class="progress-bar" id="uploadProgressBar"></div>
                     </div>
                 </div>
-
             </div>
 
-            <div class="instructions card">
-                <h3><i class="fa-solid fa-circle-info"></i> Instrucciones</h3>
-                <ul>
-                    <li>1. Permite el acceso a la cámara.</li>
-                    <li>2. Ubícate a 1 metro, asegurando que se vean tus brazos.</li>
-                    <li>3. Presiona <strong>Grabar</strong> y haz la seña.</li>
-                    <li>4. Presiona <strong>Detener</strong>. La subida es automática.</li>
-                </ul>
+            <!-- Instructions: mini -->
+            <div class="instructions glass">
+                <details>
+                    <summary><i class="fa-solid fa-circle-info"></i> ¿Cómo funciona?</summary>
+                    <ol>
+                        <li>Permite el acceso a la cámara.</li>
+                        <li>Ubícate a 1 metro, asegurando que se vean tus brazos.</li>
+                        <li>Elige <strong>Palabra</strong> u <strong>Oración</strong>, escribe el texto.</li>
+                        <li>Presiona <strong>Grabar</strong> y haz la seña.</li>
+                        <li>Presiona <strong>Detener</strong>. La subida es automática.</li>
+                    </ol>
+                </details>
             </div>
         </aside>
 
-        <!-- Viewport Principal (Cámara) -->
+        <!-- ==================== VIDEO SECTION ==================== -->
         <section class="video-section">
             <div class="video-container" id="videoContainer">
                 <video id="webcam" autoplay playsinline muted></video>
 
-                <div class="overlay-ui">
-                    <span id="recordingBadge" class="badge-recording hidden"><span class="dot"></span> GRABANDO</span>
+                <!-- Overlay: Badge de Grabación -->
+                <div class="overlay-top">
+                    <span id="recordingBadge" class="badge-recording hidden">
+                        <span class="dot"></span> GRABANDO
+                    </span>
+                    <span id="palabraOverlay" class="badge-palabra hidden"></span>
+                </div>
+
+                <!-- Overlay: Controles flotantes (Mobile) -->
+                <div class="overlay-bottom" id="overlayBottom">
+                    <button id="btnStartCameraMobile" class="btn btn-primary btn-glow btn-float">
+                        <i class="fa-solid fa-video"></i> Iniciar Cámara
+                    </button>
+                    <button id="btnRecordMobile" class="btn btn-record btn-glow btn-float" disabled>
+                        <i class="fa-solid fa-circle"></i> Grabar
+                    </button>
+                    <button id="btnStopMobile" class="btn btn-stop btn-glow btn-float hidden">
+                        <i class="fa-solid fa-square"></i> Detener
+                    </button>
+                </div>
+
+                <!-- Upload status flotante (Mobile) -->
+                <div id="uploadStatusMobile" class="upload-status-mobile hidden">
+                    <p class="status-text"><i class="fa-solid fa-spinner fa-spin"></i> Subiendo...</p>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="uploadProgressBarMobile"></div>
+                    </div>
                 </div>
             </div>
         </section>
 
     </main>
-
-    <!-- Modal Removido. URL Hardcodeada en BD -->
-
-
-    <!-- JSZip (CDN) removed unless needed -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <!-- Lógica de Negocios (ES Modules) -->
     <script type="module" src="./src/js/CameraManager.js"></script>

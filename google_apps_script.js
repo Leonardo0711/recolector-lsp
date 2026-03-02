@@ -35,6 +35,7 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
     const perfil = data.perfil || "Desconocido";
     const palabra = data.palabra || "Varios";
+    const tipo = data.tipo || "PALABRAS"; // "PALABRAS" o "ORACIONES"
 
     // Archivos en Base64
     const videoData = data.videoBase64;
@@ -46,10 +47,13 @@ function doPost(e) {
     // 3. Crear o encontrar la carpeta del Perfil (Usuario)
     let perfilFolder = getOrCreateSubFolder(baseFolder, perfil);
 
-    // 4. Crear o encontrar la carpeta de la Palabra
-    let palabraFolder = getOrCreateSubFolder(perfilFolder, palabra);
+    // 4. Crear o encontrar la carpeta del Tipo (PALABRAS / ORACIONES)
+    let tipoFolder = getOrCreateSubFolder(perfilFolder, tipo);
 
-    // 5. Decodificar el video WebM (viene como: data:video/webm;base64,.....)
+    // 5. Crear o encontrar la carpeta de la Palabra/Oración
+    let palabraFolder = getOrCreateSubFolder(tipoFolder, palabra);
+
+    // 6. Decodificar el video WebM (viene como: data:video/webm;base64,.....)
     const base64Video = videoData.split(',')[1];
     const decodedVideo = Utilities.base64Decode(base64Video);
     const videoBlob = Utilities.newBlob(decodedVideo, 'video/webm', `${filenameBase}.webm`);

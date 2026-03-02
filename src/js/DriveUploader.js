@@ -4,40 +4,37 @@ export class DriveUploader {
     }
 
     hasUrl() {
-        return true;
-    }
-
-    setUrl(url) {
-        // Obsoleto
+        return !!this.gasUrl;
     }
 
     /**
      * @param {Blob} videoBlob - The WebM video blob
      * @param {String} perfil - User profile string
-     * @param {String} palabra - Word recorded
+     * @param {String} palabra - Word or sentence recorded
+     * @param {String} tipo - "PALABRAS" or "ORACIONES"
      */
-    async uploadData(videoBlob, perfil, palabra) {
+    async uploadData(videoBlob, perfil, palabra, tipo) {
         if (!this.hasUrl()) throw new Error("Google Apps Script URL no configurada.");
 
-        // Convert the Video Blob out of memory to Base64 
+        // Convert the Video Blob to Base64 
         const base64Video = await this._blobToBase64(videoBlob);
 
         const payload = {
             perfil: perfil,
             palabra: palabra,
+            tipo: tipo,
             videoBase64: base64Video
         };
 
         try {
             const response = await fetch(this.gasUrl, {
                 method: "POST",
-                mode: "no-cors", // Required to bypass CORS to a Google webapp in an opaque way
+                mode: "no-cors",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify(payload)
             });
-            // Opaque responses do not have ok/status readable. If it didn't throw network error, we assume GAS processed it.
             return { success: true };
         } catch (error) {
             console.error("Upload Error:", error);

@@ -13,23 +13,17 @@ class App {
         this.initEventListeners();
     }
 
-    checkInitialConfig() {
-        // Ya no es necesario, URL está hardcodeada
-    }
-
     initEventListeners() {
-        // Modal Removed
-
-        // Iniciar Cámara
-        this.ui.btnStartCamera.addEventListener('click', async () => {
+        // --- Iniciar Cámara (Desktop + Mobile) ---
+        const startCameraHandler = async () => {
             try {
+                // Disable both buttons
                 this.ui.btnStartCamera.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cargando...';
                 this.ui.btnStartCamera.disabled = true;
+                this.ui.btnStartCameraMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                this.ui.btnStartCameraMobile.disabled = true;
 
-                // Prender Camara
                 await this.camera.startCamera();
-
-                // Instanciar Grabador Maestro
                 this.recorder = new RecorderManager(this.camera.getStream());
 
                 this.ui.setCameraReadyState();
@@ -37,40 +31,43 @@ class App {
                 alert(error.message);
                 this.ui.btnStartCamera.innerHTML = '<i class="fa-solid fa-video"></i> Iniciar Cámara';
                 this.ui.btnStartCamera.disabled = false;
+                this.ui.btnStartCameraMobile.innerHTML = '<i class="fa-solid fa-video"></i> Iniciar Cámara';
+                this.ui.btnStartCameraMobile.disabled = false;
             }
-        });
+        };
+        this.ui.btnStartCamera.addEventListener('click', startCameraHandler);
+        this.ui.btnStartCameraMobile.addEventListener('click', startCameraHandler);
 
-        // Grabar
-        this.ui.btnRecord.addEventListener('click', () => {
+        // --- Grabar (Desktop + Mobile) ---
+        const recordHandler = () => {
             if (!this.ui.validateInputs()) return;
             if (!this.recorder) return;
 
-            // URL está hardcodeada siempre tendrá returns true
-
             this.ui.setRecordingState();
             this.recorder.startRecording();
-        });
+        };
+        this.ui.btnRecord.addEventListener('click', recordHandler);
+        this.ui.btnRecordMobile.addEventListener('click', recordHandler);
 
-        // Detener y Subir
-        this.ui.btnStop.addEventListener('click', async () => {
+        // --- Detener y Subir (Desktop + Mobile) ---
+        const stopHandler = async () => {
             try {
                 this.ui.setUploadingState();
 
-                // 1. Detener Grabación y sacar datos
                 const { videoBlob } = await this.recorder.stopRecording();
-                const { perfil, palabra } = this.ui.getInputs();
+                const { perfil, palabra, tipo } = this.ui.getInputs();
 
-                // 2. Subir a Drive Serverless ArrayBuffer
-                await this.uploader.uploadData(videoBlob, perfil, palabra);
+                await this.uploader.uploadData(videoBlob, perfil, palabra, tipo);
 
-                // 3. Todo OK
                 this.ui.setFinishedState();
 
             } catch (e) {
                 console.error(e);
                 this.ui.setErrorState(e.message || "Error al subir video");
             }
-        });
+        };
+        this.ui.btnStop.addEventListener('click', stopHandler);
+        this.ui.btnStopMobile.addEventListener('click', stopHandler);
     }
 }
 
