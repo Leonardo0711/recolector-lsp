@@ -20,8 +20,8 @@
  * 11. Esa URL es la que pegarás en el archivo JavaScript de nuestro proyecto Frontend.
  */
 
-// ¡CAMBIA ESTO POR EL ID DE TU CARPETA RAIZ EN DRIVE!
-const FOLDER_ID_BASE = "1IDGscINWhx15_Rux8sOYKfLG3WOATIEw";
+// ¡CAMBIA ESTO POR EL ID DE TU CARPETA RAIZ EN DRIVE Y PEGA EL ARCHIVO EN APP SCRIPT!
+const FOLDER_ID_BASE = "TU_ID_DE_CARPETA_AQUI";
 
 function doPost(e) {
   try {
