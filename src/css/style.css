@@ -1,8 +1,12 @@
-:root {
+:root,
+[data-theme=dark] {
   --bg-dark: #0a0b10;
   --bg-panel: rgba(15, 17, 24, 0.85);
   --bg-card: rgba(30, 33, 45, 0.6);
   --bg-card-border: rgba(100, 110, 160, 0.15);
+  --bg-input: rgba(10, 11, 16, 0.6);
+  --bg-input-border: rgba(100, 110, 160, 0.2);
+  --bg-video: #0a0b10;
   --text-main: #eef0f6;
   --text-secondary: #a0a8c0;
   --text-muted: #6b7394;
@@ -21,6 +25,40 @@
   --radius-md: 14px;
   --radius-lg: 20px;
   --radius-xl: 28px;
+  --bg-gradient: linear-gradient(135deg, #0a0b10 0%, #12132a 25%, #0a0b10 50%, #1a0f2e 75%, #0a0b10 100%);
+  --bg-radial-1: rgba(124, 92, 252, 0.08);
+  --bg-radial-2: rgba(24, 220, 255, 0.05);
+  --sidebar-border: rgba(100, 110, 160, 0.1);
+  --scrollbar-thumb: rgba(124, 92, 252, 0.3);
+}
+
+[data-theme=light] {
+  --bg-dark: #f0f2f8;
+  --bg-panel: rgba(255, 255, 255, 0.92);
+  --bg-card: rgba(255, 255, 255, 0.7);
+  --bg-card-border: rgba(124, 92, 252, 0.12);
+  --bg-input: rgba(240, 242, 248, 0.8);
+  --bg-input-border: rgba(124, 92, 252, 0.18);
+  --bg-video: #e8eaf2;
+  --text-main: #1a1c2e;
+  --text-secondary: #4a4e6a;
+  --text-muted: #8890b0;
+  --primary: #6c4ce6;
+  --primary-glow: rgba(108, 76, 230, 0.25);
+  --primary-hover: #5a3dd0;
+  --record: #e8364a;
+  --record-glow: rgba(232, 54, 74, 0.2);
+  --record-hover: #d02e42;
+  --success: #22b868;
+  --success-glow: rgba(34, 184, 104, 0.15);
+  --warning: #e89200;
+  --warning-glow: rgba(232, 146, 0, 0.2);
+  --cyan: #0abad6;
+  --bg-gradient: linear-gradient(135deg, #f0f2f8 0%, #e8eafc 25%, #f0f2f8 50%, #ede8fc 75%, #f0f2f8 100%);
+  --bg-radial-1: rgba(124, 92, 252, 0.06);
+  --bg-radial-2: rgba(24, 220, 255, 0.04);
+  --sidebar-border: rgba(124, 92, 252, 0.08);
+  --scrollbar-thumb: rgba(124, 92, 252, 0.2);
 }
 
 *,
@@ -42,21 +80,110 @@ body {
   color: var(--text-main);
   min-height: 100vh;
   position: relative;
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
 .animated-bg {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background: linear-gradient(135deg, #0a0b10 0%, #12132a 25%, #0a0b10 50%, #1a0f2e 75%, #0a0b10 100%);
+  background: var(--bg-gradient);
   background-size: 400% 400%;
   animation: gradientShift 15s ease infinite;
+  transition: background 0.5s ease;
 }
 .animated-bg::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 20% 50%, rgba(124, 92, 252, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(24, 220, 255, 0.05) 0%, transparent 50%);
+  background: radial-gradient(ellipse at 20% 50%, var(--bg-radial-1) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, var(--bg-radial-2) 0%, transparent 50%);
+  transition: background 0.5s ease;
+}
+
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-switch {
+  width: 56px;
+  height: 30px;
+  border-radius: 30px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  background: linear-gradient(135deg, #1a1c2e, #2d3050);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+.theme-switch .switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffd43b, #ff922b);
+  box-shadow: 0 2px 8px rgba(255, 212, 59, 0.4);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.theme-switch .switch-knob i {
+  font-size: 0.7rem;
+  color: #1a1c2e;
+  transition: transform 0.4s ease;
+}
+.theme-switch .switch-stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  transition: opacity 0.4s ease;
+}
+.theme-switch .switch-stars::before, .theme-switch .switch-stars::after {
+  content: "";
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: white;
+}
+.theme-switch .switch-stars::before {
+  top: 7px;
+  right: 12px;
+  opacity: 0.8;
+}
+.theme-switch .switch-stars::after {
+  top: 16px;
+  right: 20px;
+  opacity: 0.5;
+  width: 2px;
+  height: 2px;
+}
+
+[data-theme=light] .theme-switch {
+  background: linear-gradient(135deg, #87ceeb, #b3e0ff);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(135, 206, 235, 0.3);
+}
+[data-theme=light] .theme-switch .switch-knob {
+  left: 29px;
+  background: linear-gradient(135deg, #ffd43b, #ff922b);
+  box-shadow: 0 2px 10px rgba(255, 212, 59, 0.5);
+}
+[data-theme=light] .theme-switch .switch-knob i {
+  transform: rotate(360deg);
+}
+[data-theme=light] .theme-switch .switch-stars {
+  opacity: 0;
 }
 
 @keyframes gradientShift {

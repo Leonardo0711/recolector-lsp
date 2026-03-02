@@ -2,6 +2,10 @@ import { CameraManager } from "./CameraManager.js";
 import { RecorderManager } from "./RecorderManager.js";
 import { UIController } from "./UIController.js";
 import { DriveUploader } from "./DriveUploader.js";
+import { ThemeController } from "./ThemeController.js";
+
+// Initialize theme immediately (before DOMContentLoaded to avoid flash)
+const themeCtrl = new ThemeController();
 
 // Page transition elements
 const landing = document.getElementById('landing');
