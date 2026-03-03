@@ -3,6 +3,7 @@ import { RecorderManager } from "./RecorderManager.js";
 import { UIController } from "./UIController.js";
 import { DriveUploader } from "./DriveUploader.js";
 import { ThemeController } from "./ThemeController.js";
+import TourManager from "./TourManager.js";
 
 // Initialize theme immediately (before DOMContentLoaded to avoid flash)
 const themeCtrl = new ThemeController();
@@ -12,6 +13,7 @@ const landing = document.getElementById('landing');
 const appContainer = document.getElementById('appContainer');
 const btnParticipar = document.getElementById('btnParticipar');
 const btnBackToLanding = document.getElementById('btnBackToLanding');
+const btnStartTour = document.getElementById('btnStartTour');
 
 // Landing → App transition
 btnParticipar.addEventListener('click', () => {
@@ -20,6 +22,9 @@ btnParticipar.addEventListener('click', () => {
         landing.classList.add('hidden');
         appContainer.classList.remove('hidden');
         appContainer.classList.add('fade-in');
+
+        // Show tour if it's the first time
+        setTimeout(() => TourManager.startTourAuto(), 400); // slight delay after fade-in
     }, 350);
 });
 
@@ -28,6 +33,11 @@ btnBackToLanding.addEventListener('click', () => {
     appContainer.classList.remove('fade-in');
     appContainer.classList.add('hidden');
     landing.classList.remove('hidden', 'fade-out');
+});
+
+// Manual Tour Trigger
+btnStartTour.addEventListener('click', () => {
+    TourManager.startTour();
 });
 
 class App {
