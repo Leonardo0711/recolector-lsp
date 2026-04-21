@@ -1410,6 +1410,10 @@ body {
   animation: fadeIn 0.4s ease forwards;
 }
 
+.hidden {
+  display: none !important;
+}
+
 .btn-back {
   display: flex;
   align-items: center;
@@ -1635,4 +1639,94 @@ body {
 .text-warning {
   color: #f59e0b !important;
   font-weight: 600;
-}
+}
+
+// =============================================
+// PROTOCOL OVERLAY
+// =============================================
+.protocol-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.protocol-card {
+    max-width: 500px;
+    width: 100%;
+    padding: 32px;
+    background: var(--bg-panel);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--bg-card-border);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+
+    h2 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--primary);
+        
+        i { font-size: 1.2rem; }
+    }
+
+    ul {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+
+        li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.5;
+
+            i {
+                color: var(--success);
+                font-size: 1rem;
+                margin-top: 2px;
+                flex-shrink: 0;
+            }
+        }
+    }
+
+    // Better contrast button for the protocol context
+    #btnCloseProtocol {
+        background: linear-gradient(135deg, var(--primary), var(--cyan));
+        color: white !important;
+        padding: 16px;
+        font-weight: 700;
+        font-size: 1rem;
+        border-radius: var(--radius-md);
+        box-shadow: 0 4px 20px var(--primary-glow);
+        width: 100%;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px var(--primary-glow);
+        }
+    }
+}
+
+.hidden {
+    display: none !important;
+}
