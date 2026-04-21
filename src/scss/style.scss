@@ -156,6 +156,7 @@ body {
   position: relative;
   background: linear-gradient(135deg, #1a1c2e, #2d3050);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 
@@ -218,6 +219,7 @@ body {
 // Light theme toggle state
 [data-theme="light"] .theme-switch {
   background: linear-gradient(135deg, #87ceeb, #b3e0ff);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(135, 206, 235, 0.3);
 
   .switch-knob {
@@ -294,7 +296,7 @@ body {
   }
 
   &::-webkit-scrollbar-thumb {
-    background: rgba(124, 92, 252, 0.3);
+    background: var(--primary-glow);
     border-radius: 4px;
   }
 }
@@ -348,7 +350,7 @@ body {
   transition: border-color 0.3s ease;
 
   &:hover {
-    border-color: rgba(124, 92, 252, 0.25);
+    border-color: var(--primary);
   }
 
   .card-header {
@@ -569,13 +571,15 @@ body {
 }
 
 .btn-secondary {
-  background: var(--bg-input);
-  border: 1px solid var(--bg-input-border);
-  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1px solid var(--primary);
+  color: var(--text-main);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 
   &:not(:disabled):hover {
-    border-color: var(--primary);
-    color: var(--primary);
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 6px 15px var(--primary-glow);
   }
 }
 
@@ -1230,7 +1234,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(124, 92, 252, 0.12);
+    background: var(--primary-glow);
     border-radius: var(--radius-sm);
     flex-shrink: 0;
   }
@@ -1411,10 +1415,10 @@ body {
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  border: 1px solid var(--bg-input-border);
+  border: 1px solid var(--primary);
   border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--primary);
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
@@ -1535,3 +1539,100 @@ body {
     background-color: var(--primary-hover) !important;
   }
 }
+
+// --- Modal/Overlay Extensions ---
+.countdown-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(4px);
+
+  #countdownNumber {
+    font-size: 8rem;
+    font-weight: 800;
+    color: white;
+    text-shadow: 0 0 30px var(--primary-glow);
+    animation: pulse-countdown 1s infinite;
+  }
+}
+
+@keyframes pulse-countdown {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(0.8); opacity: 0.5; }
+}
+
+.target-text-overlay {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--primary);
+  z-index: 90;
+  pointer-events: none;
+  max-width: 80%;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+
+  p {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+}
+
+.mode-description {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 3px solid var(--primary);
+  border-radius: 0 4px 4px 0;
+}
+
+.prompt-instructions {
+  margin-top: 15px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--bg-input-border);
+
+  p {
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 5px;
+  }
+
+  small {
+    color: var(--primary);
+    display: block;
+    font-style: italic;
+  }
+}
+
+.quality-flag-container {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(245, 158, 11, 0.1);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.text-warning {
+  color: #f59e0b !important;
+  font-weight: 600;
+}

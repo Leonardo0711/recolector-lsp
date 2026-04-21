@@ -8,30 +8,41 @@ import TourManager from "./TourManager.js";
 // Initialize global theme
 const themeCtrl = new ThemeController();
 
-// --- Navigation Elements ---
-const landing = document.getElementById('landing');
-const appContainer = document.getElementById('appContainer');
-const btnParticipar = document.getElementById('btnParticipar');
-const btnBackToLanding = document.getElementById('btnBackToLanding');
-const btnStartTour = document.getElementById('btnStartTour');
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Navigation Elements ---
+    const landing = document.getElementById('landing');
+    const appContainer = document.getElementById('appContainer');
+    const btnParticipar = document.getElementById('btnParticipar');
+    const btnBackToLanding = document.getElementById('btnBackToLanding');
+    const btnStartTour = document.getElementById('btnStartTour');
 
-btnParticipar.addEventListener('click', () => {
-    landing.classList.add('fade-out');
-    setTimeout(() => {
-        landing.classList.add('hidden');
-        appContainer.classList.remove('hidden', 'fade-in');
-        appContainer.classList.add('fade-in');
-        setTimeout(() => TourManager.startTourAuto(), 400);
-    }, 350);
+    if (btnParticipar && landing && appContainer) {
+        btnParticipar.addEventListener('click', () => {
+            landing.classList.add('fade-out');
+            setTimeout(() => {
+                landing.classList.add('hidden');
+                appContainer.classList.remove('hidden', 'fade-in');
+                appContainer.classList.add('fade-in');
+                setTimeout(() => TourManager.startTourAuto(), 400);
+            }, 350);
+        });
+    }
+
+    if (btnBackToLanding && appContainer && landing) {
+        btnBackToLanding.addEventListener('click', () => {
+            appContainer.classList.remove('fade-in');
+            appContainer.classList.add('hidden');
+            landing.classList.remove('hidden', 'fade-out');
+        });
+    }
+
+    if (btnStartTour) {
+        btnStartTour.addEventListener('click', () => TourManager.startTour());
+    }
+
+    window.appInstance = new App();
 });
 
-btnBackToLanding.addEventListener('click', () => {
-    appContainer.classList.remove('fade-in');
-    appContainer.classList.add('hidden');
-    landing.classList.remove('hidden', 'fade-out');
-});
-
-btnStartTour.addEventListener('click', () => TourManager.startTour());
 
 class App {
     constructor() {
@@ -87,15 +98,24 @@ class App {
                 this.ui.btnStartCamera.innerHTML = '<i class="fa-solid fa-video"></i> Iniciar Cámara';
             }
         };
-        this.ui.btnStartCamera.addEventListener('click', startCamera);
+        
+        if (this.ui.btnStartCamera) {
+            this.ui.btnStartCamera.addEventListener('click', startCamera);
+        }
 
         // 2. Recording Flow (Toggle Pattern)
         const toggleRecording = async () => {
-            // If not recording -> Start
+            // If not recording -> Start countdown then record
             if (this.ui.recordingBadge.classList.contains('hidden')) {
                 if (!this.ui.participantData) return alert("Primero confirma tus datos de participante.");
-                if (!this.ui.currentWord) return alert("Selecciona una palabra para grabar.");
+                if (!this.ui.currentWord) return alert("Selecciona un ítem para grabar.");
                 
+                // Block UI during countdown
+                this.ui.btnRecord.disabled = true;
+                this.ui.btnRecordMobile.disabled = true;
+
+                await this.ui.startCountdown();
+
                 this.ui.setRecordingState();
                 this.recorder.startRecording();
             } 
@@ -111,53 +131,39 @@ class App {
             }
         };
 
-        this.ui.btnRecord.addEventListener('click', toggleRecording);
-        this.ui.btnStop.addEventListener('click', toggleRecording);
-        this.ui.btnRecordMobile.addEventListener('click', toggleRecording);
+        if (this.ui.btnRecord) this.ui.btnRecord.addEventListener('click', toggleRecording);
+        if (this.ui.btnStop) this.ui.btnStop.addEventListener('click', toggleRecording);
+        if (this.ui.btnRecordMobile) this.ui.btnRecordMobile.addEventListener('click', toggleRecording);
 
         // 3. Review & Upload Flow
-        this.ui.btnAccept.addEventListener('click', async () => {
-            try {
-                this.ui.setUploadingState();
-                
-                const meta = this.ui.getMetadata();
-                const payload = {
-                    participant_id: this.participantId,
-                    alias: meta.participant.alias,
-                    session_id: this.sessionId,
-                    label_id: meta.word.label_id,
-                    label: meta.word.label,
-                    repetition: meta.repetition,
-                    capture_datetime: new Date().toISOString(),
-                    width: this.currentRecording.width,
-                    height: this.currentRecording.height,
-                    duration_sec: parseFloat(this.currentRecording.duration.toFixed(2)),
-                    device_type: /Mobi|Android/i.test(navigator.userAgent) ? "mobile" : "desktop",
-                    age: meta.participant.age,
-                    region: meta.participant.region,
-                    dominant_hand: meta.participant.hand,
-                    lsp_level: meta.participant.level,
-                    participant_type: meta.participant.type,
-                    consent_research: meta.consent_research,
-                    consent_training: meta.consent_training,
-                    consent_storage: meta.consent_storage,
-                    quality_status: "pending",
-                    review_status: "pending",
-                    processing_status: "raw"
-                };
+        if (this.ui.btnAccept) {
+            this.ui.btnAccept.addEventListener('click', async () => {
+                try {
+                    this.ui.setUploadingState();
+                    
+                    const meta = this.ui.getMetadata();
+                    const payload = {
+                        ...meta, // All UI metadata (capture_mode, IDs, labels, flags, etc.)
+                        session_id: this.sessionId,
+                        participant_id: this.participantId,
+                        alias: meta.participant.alias,
+                        capture_datetime: new Date().toISOString(),
+                        width: this.currentRecording.width,
+                        height: this.currentRecording.height,
+                        duration_sec: parseFloat(this.currentRecording.duration.toFixed(2)),
+                        device_type: /Mobi|Android/i.test(navigator.userAgent) ? "mobile" : "desktop"
+                    };
 
-                const response = await this.uploader.uploadData(this.currentRecording.videoBlob, payload);
-                console.log("Subida exitosa:", response.sample_id);
-                
-                this.ui.setFinishedState();
-                this.currentRecording = null;
-            } catch (error) {
-                this.ui.setErrorState(error.message);
-            }
-        });
+                    const response = await this.uploader.uploadData(this.currentRecording.videoBlob, payload);
+                    console.log("Subida exitosa:", response.sample_id);
+                    
+                    this.ui.setFinishedState();
+                    this.currentRecording = null;
+                } catch (error) {
+                    this.ui.setErrorState(error.message);
+                }
+            });
+        }
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    window.appInstance = new App();
-});

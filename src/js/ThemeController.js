@@ -12,12 +12,14 @@ export class ThemeController {
         this.currentTheme = saved || 'dark';
         this.applyTheme(this.currentTheme, false);
 
-        // Bind toggle
-        this.themeSwitch.addEventListener('click', () => {
-            this.currentTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
-            this.applyTheme(this.currentTheme, true);
-            localStorage.setItem('lsp_theme', this.currentTheme);
-        });
+        // Bind toggle with safety check
+        if (this.themeSwitch) {
+            this.themeSwitch.addEventListener('click', () => {
+                this.currentTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
+                this.applyTheme(this.currentTheme, true);
+                localStorage.setItem('lsp_theme', this.currentTheme);
+            });
+        }
     }
 
     applyTheme(theme, animate) {

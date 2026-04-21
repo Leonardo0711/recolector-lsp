@@ -45,10 +45,19 @@ class TourManager {
                     }
                 },
                 {
+                    element: '#modeSelectorCard',
+                    popover: {
+                        title: '3. Modo de Captura',
+                        description: 'Elige entre los 4 bloques (Aislado, Expresiones, Plantillas o Continuo). Cada uno tiene un objetivo científico distinto.',
+                        side: 'bottom',
+                        align: 'start'
+                    }
+                },
+                {
                     element: '#wordSelectorCard',
                     popover: {
-                        title: '3. Vocabulario Cerrado',
-                        description: 'Selecciona una categoría y la palabra que vas a grabar. Recuerda realizar 5 repeticiones por palabra.',
+                        title: '4. Selección de Ítem',
+                        description: 'Elige la categoría y el ítem a grabar. En modos aislados realizaremos hasta 5 repeticiones; en continuo realizaremos grabaciones narrativas.',
                         side: 'bottom',
                         align: 'start'
                     }

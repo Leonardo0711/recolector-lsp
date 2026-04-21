@@ -4,20 +4,18 @@ Este proyecto es una plataforma web profesional diseñada para recolectar un dat
 
 ## Características Principales
 
-*   **Vocabulario Estructurado**: Lista cerrada de 50 palabras clave categorizadas para garantizar un dataset balanceado y útil para modelos de clasificación.
-*   **Gestión Ética**: Flujo de consentimiento informado obligatorio integrado en la sesión de recolección.
-*   **Metadatos de Alta Fidelidad**: Captura automática de resolución, duración, mano dominante, región y tipo de dispositivo.
-*   **Validación Humana**: Fase de revisión post-captura para asegurar la calidad del video antes de la subida.
-*   **Validación Robusta**: El servidor valida la integridad de cada muestra, asegurando que existan consentimientos y metadatos completos antes de procesar el video.
-*   **Persistencia de Progreso**: El sistema recuerda el perfil del participante y su avance en las repeticiones de cada palabra de forma local, permitiendo sesiones de recolección intermitentes sin pérdida de datos.
-*   **Infraestructura Serverless**: Integración directa con Google Drive y Google Sheets (Índice Maestro) para una organización inmediata de los datos RAW.
+*   **Vocabulario Multi-Bloque**: Más de 200 ítems lingüísticos divididos en 4 bloques (Léxico Aislado, Expresiones Fijas, Secuencias Controladas y Signing Continuo).
+*   **Gestión Ética Rigurosa**: Flujo de consentimiento informado obligatorio con validación tanto en el frontend como en el backend.
+*   **Metadatos de Alta Fidelidad**: Captura automática de resolución, duración, mano dominante, región y tipo de dispositivo, vinculados por modo de captura.
+*   **Validación de Calidad**: Fase de revisión post-captura con opción de marcar muestras incompletas para auditoría.
+*   **Infraestructura Escalable**: Integración directa con Google Drive y Google Sheets (Índice Maestro) con organización jerárquica automática.
 
 ## Estructura del Dataset (Drive)
 
-El sistema organiza los archivos siguiendo una jerarquía lógica para facilitar el procesamiento posterior:
-*   `raw/videos/YYYY/MM/`: Archivos de video `.webm` crudos.
-*   `raw/metadata/YYYY/MM/`: Archivos `.json` con los metadatos técnicos y demográficos vinculados.
-*   **Índice Maestro**: Google Sheet centralizado que actúa como base de datos de consulta rápida de todo el corpus.
+El sistema organiza los archivos siguiendo una jerarquía científica para facilitar el entrenamiento de modelos:
+*   `raw/{capture_mode}/videos/YYYY/MM/`: Archivos de video `.webm`.
+*   `raw/{capture_mode}/metadata/YYYY/MM/`: Archivos `.json` con metadatos técnicos y demográficos.
+*   **Índice Maestro**: Google Sheet con pestañas separadas para `samples` (muestras) y `participants` (perfiles).
 
 ## Requerimientos Técnicos
 

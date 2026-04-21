@@ -23,7 +23,7 @@
 
     <!-- Toggle Light/Dark -->
     <div class="theme-toggle">
-        <button class="theme-switch" id="themeSwitch" title="Cambiar tema">
+        <button class="theme-switch" id="themeSwitch" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">
             <span class="switch-stars"></span>
             <span class="switch-knob"><i class="fa-solid fa-moon" id="themeIcon"></i></span>
         </button>
@@ -56,7 +56,7 @@
                     <i class="fa-solid fa-hand"></i>
                     <div>
                         <span class="stat-label">Alcance</span>
-                        <span class="stat-value">50 Palabras Clave</span>
+                        <span class="stat-value">200+ Items Lingüísticos</span>
                     </div>
                 </div>
                 <div class="stat-item">
@@ -77,7 +77,7 @@
                     </div>
                     <div class="step-item">
                         <div class="step-number">2</div>
-                        <p>Elige una palabra de nuestra <strong>lista oficial</strong>.</p>
+                        <p>Elige un <strong>modo de captura</strong> y un ítem del vocabulario.</p>
                     </div>
                     <div class="step-item">
                         <div class="step-number">3</div>
@@ -201,11 +201,28 @@
                 </div>
             </div>
 
-            <!-- Card: Selector de Palabra (Cerrado) -->
+            <!-- Card: Modo de Captura -->
+            <div class="card glass hidden" id="modeSelectorCard">
+                <div class="card-header">
+                    <i class="fa-solid fa-clapperboard"></i>
+                    <h2>Modo de Captura</h2>
+                </div>
+                <div class="input-group">
+                    <select id="modeSelect">
+                        <option value="isolated">Bloque A: Léxico Aislado</option>
+                        <option value="expression">Bloque B: Expresiones Fijas</option>
+                        <option value="template">Bloque C: Secuencias Cortas</option>
+                        <option value="continuous">Bloque D: Signing Continuo</option>
+                    </select>
+                    <p class="mode-description" id="modeDescription">Captura de señas individuales, una por clip.</p>
+                </div>
+            </div>
+
+            <!-- Card: Selector de Palabra / Prompt (Dinámico) -->
             <div class="card glass hidden" id="wordSelectorCard">
                 <div class="card-header">
                     <i class="fa-solid fa-language"></i>
-                    <h2>Palabra a Grabar</h2>
+                    <h2 id="selectorTitle">Palabra a Grabar</h2>
                 </div>
 
                 <div class="input-group">
@@ -217,7 +234,7 @@
                         <option value="">Primero elige categoría</option>
                     </select>
 
-                    <div class="repetition-indicator">
+                    <div class="repetition-indicator" id="repetitionContainer">
                         <span>Repetición:</span>
                         <div id="repetitionCircles" class="circles">
                             <span class="circle" data-rep="1">1</span>
@@ -226,6 +243,11 @@
                             <span class="circle" data-rep="4">4</span>
                             <span class="circle" data-rep="5">5</span>
                         </div>
+                    </div>
+
+                    <div id="promptInstructions" class="prompt-instructions hidden">
+                        <p id="promptTextDisplay"></p>
+                        <small id="durationLimitNote"></small>
                     </div>
                 </div>
             </div>
@@ -250,6 +272,14 @@
                     <div class="progress-bar-container">
                         <div class="progress-bar" id="uploadProgressBar"></div>
                     </div>
+                </div>
+
+                <!-- Flag de repetición por calidad -->
+                <div class="quality-flag-container hidden" id="qualityFlagContainer">
+                    <label class="consent-item">
+                        <input type="checkbox" id="flagIncomplete">
+                        <span class="text-warning"><i class="fa-solid fa-triangle-exclamation"></i> Seña incompleta (repetir)</span>
+                    </label>
                 </div>
             </div>
 
@@ -276,6 +306,16 @@
                         <span class="dot"></span> GRABANDO
                     </span>
                     <span id="palabraOverlay" class="badge-palabra hidden"></span>
+
+                    <!-- Overlay: Contador Regresivo -->
+                    <div id="countdownOverlay" class="countdown-overlay hidden">
+                        <span id="countdownNumber">3</span>
+                    </div>
+
+                    <!-- Overlay: Texto Objetivo Dinámico -->
+                    <div id="targetTextOverlay" class="target-text-overlay hidden">
+                        <p id="targetTextLabel"></p>
+                    </div>
 
                     <!-- Stats Técnicos -->
                     <div id="techStats" class="tech-stats hidden">
@@ -336,10 +376,6 @@
     </main>
 
     <!-- Lógica de Negocios (ES Modules) -->
-    <script type="module" src="./src/js/CameraManager.js"></script>
-    <script type="module" src="./src/js/DriveUploader.js"></script>
-    <script type="module" src="./src/js/RecorderManager.js"></script>
-    <script type="module" src="./src/js/UIController.js"></script>
     <script type="module" src="./src/js/App.js"></script>
 
 </body>
