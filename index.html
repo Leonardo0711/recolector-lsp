@@ -37,69 +37,65 @@
             </div>
 
             <h1 class="landing-title">
-                Ayúdanos a construir la primera
-                <span class="gradient-text">IA de Lenguaje de Señas Peruano</span>
+                Construyendo el Dataset de <span class="gradient-text">LSP</span> de Grado Científico
             </h1>
 
             <p class="landing-description">
-                Imagina un mundo donde la tecnología elimina las barreras de comunicación. Estamos recolectando videos
-                de señas para crear una base de datos abierta que dará vida a la primera Inteligencia Artificial capaz
-                de <strong>traducir el Lenguaje de Señas Peruano (LSP)</strong> en tiempo real. ¡Tu contribución puede
-                transformar la manera en que nos conectamos!
+                Proyecto de recolección de <strong>Lenguaje de Señas Peruano (LSP)</strong> para el diseño de modelos de IA robustos. Ayúdanos capturando señas claras y precisas de nuestra <strong>lista estructurada de vocabulario</strong>.
             </p>
 
             <div class="landing-stats">
                 <div class="stat-item">
                     <i class="fa-solid fa-video"></i>
                     <div>
-                        <span class="stat-label">Formato Aceptado</span>
-                        <span class="stat-value">Video Claro / HD</span>
+                        <span class="stat-label">Calidad</span>
+                        <span class="stat-value">Video Bruto (Raw)</span>
                     </div>
                 </div>
                 <div class="stat-item">
-                    <i class="fa-solid fa-hand-holding-heart"></i>
+                    <i class="fa-solid fa-hand"></i>
                     <div>
-                        <span class="stat-label">Tu Impacto</span>
-                        <span class="stat-value">Invaluable</span>
+                        <span class="stat-label">Alcance</span>
+                        <span class="stat-value">50 Palabras Clave</span>
                     </div>
                 </div>
                 <div class="stat-item">
-                    <i class="fa-solid fa-shield-halved"></i>
+                    <i class="fa-solid fa-user-shield"></i>
                     <div>
                         <span class="stat-label">Privacidad</span>
-                        <span class="stat-value">Fines de Investigación</span>
+                        <span class="stat-value">Consentimiento Ético</span>
                     </div>
                 </div>
             </div>
 
             <div class="landing-how">
-                <h3><i class="fa-solid fa-list-check"></i> ¿Cómo funciona?</h3>
+                <h3><i class="fa-solid fa-circle-play"></i> Proceso de Recolección</h3>
                 <div class="steps-grid">
                     <div class="step-item">
                         <div class="step-number">1</div>
-                        <p>Crea tu <strong>perfil</strong> (nombre o alias).</p>
+                        <p>Registra tu <strong>perfil</strong> y autoriza el uso ético.</p>
                     </div>
                     <div class="step-item">
                         <div class="step-number">2</div>
-                        <p>Elige si grabarás una <strong>palabra</strong> o una <strong>oración</strong>.</p>
+                        <p>Elige una palabra de nuestra <strong>lista oficial</strong>.</p>
                     </div>
                     <div class="step-item">
                         <div class="step-number">3</div>
-                        <p>Escribe el texto y <strong>graba la seña</strong> frente a tu cámara.</p>
+                        <p>Realiza la seña y <strong>valida la calidad</strong> del video.</p>
                     </div>
                     <div class="step-item">
                         <div class="step-number">4</div>
-                        <p>El video se <strong>sube automáticamente</strong> a nuestra base de datos.</p>
+                        <p>¡Listo! La muestra se guarda con <strong>trazabilidad total</strong>.</p>
                     </div>
                 </div>
             </div>
 
             <button class="btn btn-cta" id="btnParticipar">
-                <i class="fa-solid fa-hand-fist"></i> ¡Quiero Participar!
+                <i class="fa-solid fa-rocket"></i> Comenzar a Contribuir
             </button>
 
             <p class="landing-footer-text">
-                <i class="fa-solid fa-lock"></i> No se requiere registro. Tus datos solo se usarán para investigación.
+                <i class="fa-solid fa-shield-halved"></i> Tus datos son tratados para fines académicos y científicos.
             </p>
         </div>
     </section>
@@ -119,44 +115,118 @@
                 </div>
             </div>
 
-            <!-- Card: Perfil -->
-            <div class="card glass">
+            <!-- Card: Formulario de Participante (Una vez por sesión) -->
+            <div class="card glass" id="participantCard">
                 <div class="card-header">
-                    <i class="fa-solid fa-user-tag"></i>
-                    <h2>Perfil</h2>
+                    <i class="fa-solid fa-user-pen"></i>
+                    <h2>Datos del Participante</h2>
                 </div>
                 <div class="input-group">
-                    <div class="input-row">
-                        <input type="text" id="perfilInput" placeholder="Ej. MARIA" autocomplete="off">
-                        <button id="btnLockPerfil" class="btn-icon btn-lock" title="Bloquear Perfil">
-                            <i class="fa-solid fa-lock-open" id="iconLockPerfil"></i>
-                        </button>
+                    <input type="text" id="participantAlias" placeholder="Alias o Código (Ej. P001)" autocomplete="off">
+                    
+                    <div class="input-row-grid">
+                        <select id="participantAge">
+                            <option value="">Rango de Edad</option>
+                            <option value="child">Niño (0-12)</option>
+                            <option value="teen">Joven (13-17)</option>
+                            <option value="adult">Adulto (18-60)</option>
+                            <option value="senior">Senior (60+)</option>
+                        </select>
+                        <select id="participantRegion">
+                            <option value="">Región</option>
+                            <option value="lima">Lima / Callao</option>
+                            <option value="norte">Norte</option>
+                            <option value="sur">Sur</option>
+                            <option value="centro">Centro</option>
+                            <option value="selva">Selva</option>
+                            <option value="extranjero">Extranjero</option>
+                        </select>
                     </div>
-                    <small><i class="fa-solid fa-bookmark"></i> Se guardará en tu navegador</small>
+
+                    <div class="input-row-grid">
+                        <select id="participantHand">
+                            <option value="">Mano Dominante</option>
+                            <option value="derecha">Derecha</option>
+                            <option value="izquierda">Izquierda</option>
+                            <option value="ambidiestro">Ambidiestro</option>
+                        </select>
+                        <select id="participantLevel">
+                            <option value="">Nivel LSP</option>
+                            <option value="basico">Básico</option>
+                            <option value="intermedio">Intermedio</option>
+                            <option value="avanzado">Avanzado / Nativo</option>
+                        </select>
+                    </div>
+
+                    <select id="participantType">
+                        <option value="">Tipo de Participante</option>
+                        <option value="nativo">Usuario Nativo (Sordo)</option>
+                        <option value="interprete">Intérprete</option>
+                        <option value="estudiante">Estudiante</option>
+                        <option value="otro">Otro / Familiar</option>
+                    </select>
+
+                    <button id="btnSaveParticipant" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">
+                        <i class="fa-solid fa-check-double"></i> Confirmar Datos
+                    </button>
+                    <small id="participantSavedMsg" class="hidden text-success">
+                        <i class="fa-solid fa-lock"></i> Datos bloqueados para esta sesión.
+                    </small>
                 </div>
             </div>
 
-            <!-- Card: Tipo + Palabra -->
-            <div class="card glass">
+            <!-- Card: Consentimiento (Obligatorio) -->
+            <div class="card glass" id="consentCard">
+                <div class="card-header">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <h2>Consentimiento</h2>
+                </div>
+                <div class="consent-group">
+                    <label class="consent-item">
+                        <input type="checkbox" id="consentResearch">
+                        <span>Autorizo uso para investigación académica</span>
+                    </label>
+                    <label class="consent-item">
+                        <input type="checkbox" id="consentStorage">
+                        <span>Autorizo almacenamiento de videos en Drive</span>
+                    </label>
+                    <label class="consent-item">
+                        <input type="checkbox" id="consentTraining">
+                        <span>Autorizo procesamiento para modelos de IA</span>
+                    </label>
+                    <label class="consent-item">
+                        <input type="checkbox" id="consentAge">
+                        <span>Confirmo ser mayor de edad o tener permiso</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Card: Selector de Palabra (Cerrado) -->
+            <div class="card glass hidden" id="wordSelectorCard">
                 <div class="card-header">
                     <i class="fa-solid fa-language"></i>
-                    <h2>¿Qué grabarás?</h2>
+                    <h2>Palabra a Grabar</h2>
                 </div>
 
-                <!-- Toggle Palabra / Oración -->
-                <div class="tipo-toggle" id="tipoToggle">
-                    <button class="tipo-option active" data-tipo="PALABRAS">
-                        <i class="fa-solid fa-font"></i> Palabra
-                    </button>
-                    <button class="tipo-option" data-tipo="ORACIONES">
-                        <i class="fa-solid fa-quote-left"></i> Oración
-                    </button>
-                    <div class="tipo-slider"></div>
-                </div>
+                <div class="input-group">
+                    <select id="categorySelect">
+                        <option value="">Selecciona Categoría</option>
+                    </select>
+                    
+                    <select id="wordSelect" disabled>
+                        <option value="">Primero elige categoría</option>
+                    </select>
 
-                <div class="input-group" style="margin-top: 16px;">
-                    <input type="text" id="palabraInput" placeholder="Ej. GRACIAS" autocomplete="off">
-                    <small><i class="fa-solid fa-folder-tree"></i> Subcarpeta destino en Drive</small>
+                    <div class="repetition-indicator">
+                        <span>Repetición:</span>
+                        <div id="repetitionCircles" class="circles">
+                            <span class="circle" data-rep="1">1</span>
+                            <span class="circle" data-rep="2">2</span>
+                            <span class="circle" data-rep="3">3</span>
+                            <span class="circle" data-rep="4">4</span>
+                            <span class="circle" data-rep="5">5</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -198,6 +268,7 @@
         <section class="video-section">
             <div class="video-container" id="videoContainer">
                 <video id="webcam" autoplay playsinline muted></video>
+                <video id="previewPlayer" class="hidden" playsinline controls></video>
 
                 <!-- Overlay: Badge de Grabación -->
                 <div class="overlay-top">
@@ -205,18 +276,34 @@
                         <span class="dot"></span> GRABANDO
                     </span>
                     <span id="palabraOverlay" class="badge-palabra hidden"></span>
+
+                    <!-- Stats Técnicos -->
+                    <div id="techStats" class="tech-stats hidden">
+                        <span id="statRes"><i class="fa-solid fa-expand"></i> --</span>
+                        <span id="statDur"><i class="fa-solid fa-clock"></i> --</span>
+                    </div>
+                </div>
+
+                <!-- Overlay: Pantalla de Revisión (Preview) -->
+                <div id="reviewOverlay" class="review-overlay hidden">
+                    <div class="review-content">
+                        <h3><i class="fa-solid fa-magnifying-glass-chart"></i> Revisar Captura</h3>
+                        <p>¿El video es claro y la seña está completa?</p>
+                        <div class="review-actions">
+                            <button id="btnRepeat" class="btn btn-secondary">
+                                <i class="fa-solid fa-rotate-left"></i> Repetir
+                            </button>
+                            <button id="btnAccept" class="btn btn-success btn-glow">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Aceptar y Subir
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Overlay: Controles flotantes (Mobile) -->
                 <div class="overlay-bottom" id="overlayBottom">
-                    <button id="btnStartCameraMobile" class="btn btn-primary btn-glow btn-float">
-                        <i class="fa-solid fa-video"></i> Iniciar
-                    </button>
-                    <button id="btnRecordMobile" class="btn btn-record btn-glow btn-float" disabled>
+                    <button id="btnRecordMobile" class="btn btn-record btn-glow btn-float hidden">
                         <i class="fa-solid fa-circle"></i> Grabar
-                    </button>
-                    <button id="btnStopMobile" class="btn btn-stop btn-glow btn-float hidden">
-                        <i class="fa-solid fa-square"></i> Detener
                     </button>
                 </div>
 
@@ -226,6 +313,22 @@
                     <div class="progress-bar-container">
                         <div class="progress-bar" id="uploadProgressBarMobile"></div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Overlay: Instrucciones / Protocolo -->
+            <div id="protocolOverlay" class="protocol-overlay hidden">
+                <div class="protocol-card glass">
+                    <h2><i class="fa-solid fa-circle-info"></i> Protocolo de Captura</h2>
+                    <ul>
+                        <li><i class="fa-solid fa-user-check"></i> Asegúrate de que se vean manos, hombros y rostro.</li>
+                        <li><i class="fa-solid fa-lightbulb"></i> Usa fondo simple y buena iluminación.</li>
+                        <li><i class="fa-solid fa-hourglass-start"></i> Quédate quieto 1 segundo antes y después de la seña.</li>
+                        <li><i class="fa-solid fa-hand"></i> Realiza la seña una sola vez de forma clara.</li>
+                    </ul>
+                    <button id="btnCloseProtocol" class="btn btn-primary" style="width: 100%;">
+                        ¡Entendido!
+                    </button>
                 </div>
             </div>
         </section>

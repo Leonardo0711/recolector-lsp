@@ -1,89 +1,137 @@
 /**
- * RECOLECTOR DE LENGUAJE DE SEÑAS PERUANO
- * Backend Serverless para Google Drive
- * 
- * INSTRUCCIONES DE USO:
- * 1. Ve a https://script.google.com/ e inicia sesión con tu cuenta de Google.
- * 2. Clic en "Nuevo Proyecto".
- * 3. Copia TODO este código y pégalo en el editor (borrando la función predeterminada).
- * 4. Modifica la variable FOLDER_ID_BASE con el ID de la carpeta en tu Drive donde quieras guardar todo.
- *    (El ID es el código largo en la URL de tu carpeta de Drive, ej: https://drive.google.com/drive/folders/1aBcD2eFgH3iJkL...)
- * 5. Clic en "Guardar" (icono de disquete).
- * 6. Clic en "Implementar" -> "Nueva implementación" (arriba a la derecha).
- * 7. Selecciona el tipo de engranaje ⚙️ -> "Aplicación Web".
- *    - Descripción: "API Recolector LSP"
- *    - Ejecutar como: "Yo (tu correo)"
- *    - Quién tiene acceso: "Cualquier persona" (IMPORTANTE para que la web funcione sin pedir login a tus usuarios).
- * 8. Clic en "Implementar".
- * 9. Autoriza los accesos cuando te lo pida (Avanzado -> Ir a Proyecto (Inseguro) -> Permitir).
- * 10. Copia la "URL de la aplicación web".
- * 11. Esa URL es la que pegarás en el archivo JavaScript de nuestro proyecto Frontend.
+ * RECOLECTOR DE LENGUAJE DE SEÑAS PERUANO - v2.2 (Profesional)
+ * Backend Serverless para Google Drive & Sheets
  */
 
-// ¡CAMBIA ESTO POR EL ID DE TU CARPETA RAIZ EN DRIVE Y PEGA EL ARCHIVO EN APP SCRIPT!
-const FOLDER_ID_BASE = "TU_ID_DE_CARPETA_AQUI";
+const FOLDER_ID_BASE = "TU_ID_DE_CARPETA_RAIZ"; // ID de la carpeta 'dataset'
+const SPREADSHEET_ID = "TU_ID_DE_SPREADSHEET"; // ID de la hoja de cálculo para el índice
 
 function doPost(e) {
   try {
-    // Evitar errores por requests vacíos (CORS preflight)
     if (!e || !e.postData || !e.postData.contents) {
-      return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "No data received" }))
-        .setMimeType(ContentService.MimeType.JSON);
+      return errorResponse("No data received");
     }
 
-    // 1. Recibir los datos del Frontend
     const data = JSON.parse(e.postData.contents);
-    const perfil = data.perfil || "Desconocido";
-    const palabra = data.palabra || "Varios";
-    const tipo = data.tipo || "PALABRAS"; // "PALABRAS" o "ORACIONES"
+    const metadata = data.metadata;
+    const videoBase64 = data.videoBase64;
 
-    // Archivos en Base64
-    const videoData = data.videoBase64;
-    const filenameBase = `${perfil}_${palabra}_${Date.now()}`;
+    // --- VALIDACIÓN DE INTEGRIDAD (Defensa del Dataset) ---
+    const validationError = validatePayload(metadata, videoBase64);
+    if (validationError) {
+      return errorResponse(validationError);
+    }
 
-    // 2. Localizar la carpeta base ("Base de Datos")
+    // 1. Generar sample_id en el servidor para garantizar unicidad
+    const sampleId = generateSampleId();
+    metadata.sample_id = sampleId;
+
+    // 2. Obtener carpetas de destino (Estructura: Raw -> Videos/Metadata -> YYYY -> MM)
+    const now = new Date();
+    const year = now.getFullYear().toString();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+
     const baseFolder = DriveApp.getFolderById(FOLDER_ID_BASE);
+    const rawFolder = getOrCreateSubFolder(baseFolder, "raw");
+    
+    // Carpetas de Archivos
+    const videosRoot = getOrCreateSubFolder(rawFolder, "videos");
+    const metadataRoot = getOrCreateSubFolder(rawFolder, "metadata");
 
-    // 3. Crear o encontrar la carpeta del Perfil (Usuario)
-    let perfilFolder = getOrCreateSubFolder(baseFolder, perfil);
+    const videoFolder = getOrCreateSubFolder(getOrCreateSubFolder(videosRoot, year), month);
+    const metaFolder = getOrCreateSubFolder(getOrCreateSubFolder(metadataRoot, year), month);
 
-    // 4. Crear o encontrar la carpeta del Tipo (PALABRAS / ORACIONES)
-    let tipoFolder = getOrCreateSubFolder(perfilFolder, tipo);
+    // 3. Guardar Video (.webm)
+    const videoBlob = Utilities.newBlob(
+      Utilities.base64Decode(videoBase64.split(',')[1]), 
+      'video/webm', 
+      `${sampleId}.webm`
+    );
+    const videoFile = videoFolder.createFile(videoBlob);
 
-    // 5. Crear o encontrar la carpeta de la Palabra/Oración
-    let palabraFolder = getOrCreateSubFolder(tipoFolder, palabra);
+    // 4. Guardar Metadatos (.json)
+    metadata.video_url = videoFile.getUrl();
+    const metaBlob = Utilities.newBlob(
+      JSON.stringify(metadata, null, 2), 
+      'application/json', 
+      `${sampleId}.json`
+    );
+    const metaFile = metaFolder.createFile(metaBlob);
+    metadata.json_url = metaFile.getUrl();
 
-    // 6. Decodificar el video WebM (viene como: data:video/webm;base64,.....)
-    const base64Video = videoData.split(',')[1];
-    const decodedVideo = Utilities.base64Decode(base64Video);
-    const videoBlob = Utilities.newBlob(decodedVideo, 'video/webm', `${filenameBase}.webm`);
-    palabraFolder.createFile(videoBlob);
+    // 5. Actualizar Índice Maestro (Google Sheets)
+    updateMasterIndex(metadata);
 
-    // 6. JSON Removido (Solo video HD en esta arquitectura)
-
-    // 7. Responder "Éxito" a la web
-    return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Archivos guardados en Drive" }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return successResponse({
+      message: "Muestra guardada exitosamente",
+      sample_id: sampleId,
+      video_url: metadata.video_url
+    });
 
   } catch (error) {
-    // Responder con cualquier error
-    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: error.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return errorResponse(error.toString());
   }
 }
 
-// Función auxiliar para buscar carpetas por nombre, o crearlas si no existen
-function getOrCreateSubFolder(parentFolder, folderName) {
-  const folders = parentFolder.getFoldersByName(folderName);
-  if (folders.hasNext()) {
-    return folders.next(); // Ya existe, la devuelve
-  } else {
-    return parentFolder.createFolder(folderName); // No existe, la crea y la devuelve
+/**
+ * Valida que los metadatos críticos y el video cumplan con los requisitos mínimos.
+ */
+function validatePayload(m, video) {
+  if (!m.participant_id) return "Falta participant_id (UUID)";
+  if (!m.label_id) return "Falta label_id";
+  if (!m.age) return "Falta rango de edad";
+  
+  // Consentimientos obligatorios
+  if (m.consent_research !== true || m.consent_training !== true || m.consent_storage !== true) {
+    return "No se han aceptado todos los consentimientos éticos";
   }
+
+  // Métricas técnicas
+  if (!m.duration_sec || m.duration_sec <= 0) return "Duración de video inválida (0s o nula)";
+  if (!video || video.length < 1000) return "Video base64 corrupto o demasiado pequeño";
+
+  return null; // Todo ok
 }
 
-// CORS Helper para que la web pueda hacer requests (OPTIONS preflight)
-function doOptions(e) {
-  return ContentService.createTextOutput("OK")
-    .setMimeType(ContentService.MimeType.TEXT);
+function generateSampleId() {
+  const d = new Date();
+  const datePart = `${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}`;
+  const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `LSP-PER-${datePart}-${randomPart}`;
+}
+
+function updateMasterIndex(m) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheets()[0]; 
+  
+  const headers = [
+    "sample_id", "participant_id", "session_id", "label_id", "label", 
+    "repetition", "capture_datetime", "width", "height", "duration_sec",
+    "device_type", "age", "region", "dominant_hand", "lsp_level", "participant_type",
+    "consent_research", "consent_training", "consent_storage",
+    "quality_status", "review_status", "processing_status",
+    "video_url", "json_url"
+  ];
+
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(headers);
+  }
+
+  const row = headers.map(h => m[h] || "");
+  sheet.appendRow(row);
+}
+
+function getOrCreateSubFolder(parent, name) {
+  const folders = parent.getFoldersByName(name);
+  return folders.hasNext() ? folders.next() : parent.createFolder(name);
+}
+
+function successResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify({ status: "success", ...data }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function errorResponse(msg) {
+  return ContentService.createTextOutput(JSON.stringify({ status: "error", message: msg }))
+    .setMimeType(ContentService.MimeType.JSON);
 }

@@ -3,3 +3,4 @@ dist/
 .env
 .sass-cache/
 .DS_Store
+export/

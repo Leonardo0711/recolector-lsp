@@ -9,8 +9,8 @@ export class CameraManager {
             // Pedir alta resolución y prioridad a la cámara frontal (o la web si existe)
             this.stream = await navigator.mediaDevices.getUserMedia({
                 video: {
-                    width: { ideal: 1920 },
-                    height: { ideal: 1080 },
+                    width: { ideal: 1280, min: 640 },
+                    height: { ideal: 720, min: 480 },
                     facingMode: "user"
                 },
                 audio: false

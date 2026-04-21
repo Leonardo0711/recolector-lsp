@@ -20,44 +20,53 @@ class TourManager {
                 {
                     element: '#sidebar',
                     popover: {
-                        title: '¡Bienvenido a DataCollect LSP!',
-                        description: 'Aquí podrás grabar señas para ayudar a construir la inteligencia artificial. Te daremos un recorrido rápido por la interfaz.',
+                        title: '¡Bienvenido a Recolector LSP!',
+                        description: 'Estamos recolectando un dataset profesional de Lenguaje de Señas Peruano. Este recorrido te enseñará por qué cada paso es vital.',
                         side: 'right',
                         align: 'start'
                     }
                 },
                 {
-                    element: '#perfilInput',
+                    element: '#participantCard',
                     popover: {
-                        title: '1. Tu Perfil',
-                        description: 'Ingresa tu nombre, código o alias. Esto nos ayuda a organizar los videos. Haz clic en el candado para guardarlo en este navegador.',
+                        title: '1. Perfil del Participante',
+                        description: 'Ingresa tus datos reales. Esto es fundamental para la variabilidad estadística (edad, región, mano dominante).',
                         side: 'bottom',
                         align: 'start'
                     }
                 },
                 {
-                    element: '#tipoToggle',
+                    element: '#consentCard',
                     popover: {
-                        title: '2. ¿Palabra u Oración?',
-                        description: 'Indica si grabarás una seña para una sola palabra o una frase/oración completa.',
+                        title: '2. Consentimiento Ético',
+                        description: 'La recolección sigue principios éticos. Debes autorizar el uso académico y de IA para continuar.',
                         side: 'bottom',
                         align: 'start'
                     }
                 },
                 {
-                    element: '#palabraInput',
+                    element: '#wordSelectorCard',
                     popover: {
-                        title: '3. Texto a grabar',
-                        description: 'Escribe exactamente qué palabra u oración vas a realizar frente a la cámara.',
+                        title: '3. Vocabulario Cerrado',
+                        description: 'Selecciona una categoría y la palabra que vas a grabar. Recuerda realizar 5 repeticiones por palabra.',
                         side: 'bottom',
+                        align: 'start'
+                    }
+                },
+                {
+                    element: '.video-container',
+                    popover: {
+                        title: '4. Área de Captura',
+                        description: 'Asegúrate de tener buena iluminación y que tus manos, hombros y rostro sean visibles.',
+                        side: 'top',
                         align: 'start'
                     }
                 },
                 {
                     element: '.controls-card',
                     popover: {
-                        title: '4. Grabación',
-                        description: 'Enciende la cámara, ubícate en el centro, presiona "Grabar Seña", realiza tu movimiento y detenlo. El video se subirá de forma automática.',
+                        title: '5. Calidad y Revisión',
+                        description: 'Después de grabar, revisaremos el video. Si es claro y completo, podrás aceptarlo para subirlo a la nube.',
                         side: 'top',
                         align: 'start'
                     }
@@ -73,7 +82,6 @@ class TourManager {
     }
 
     startTourAuto(force = false) {
-        // Verificar si es la primera vez que entra a la App
         const hasSeenTour = localStorage.getItem('lsp_tour_seen');
         if (!hasSeenTour || force) {
             this.startTour();

@@ -9,33 +9,39 @@ export class DriveUploader {
 
     /**
      * @param {Blob} videoBlob - The WebM video blob
-     * @param {String} perfil - User profile string
-     * @param {String} palabra - Word or sentence recorded
-     * @param {String} tipo - "PALABRAS" or "ORACIONES"
+     * @param {Object} metadata - The full sample metadata
      */
-    async uploadData(videoBlob, perfil, palabra, tipo) {
+    async uploadData(videoBlob, metadata) {
         if (!this.hasUrl()) throw new Error("Google Apps Script URL no configurada.");
 
         // Convert the Video Blob to Base64 
         const base64Video = await this._blobToBase64(videoBlob);
 
         const payload = {
-            perfil: perfil,
-            palabra: palabra,
-            tipo: tipo,
+            metadata: metadata,
             videoBase64: base64Video
         };
 
         try {
             const response = await fetch(this.gasUrl, {
                 method: "POST",
-                mode: "no-cors",
+                mode: "cors", // Changed to cors to get response
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify(payload)
             });
-            return { success: true };
+
+            if (!response.ok) {
+                throw new Error(`Servidor respondió con status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (result.status === "error") {
+                throw new Error(result.message);
+            }
+
+            return result;
         } catch (error) {
             console.error("Upload Error:", error);
             throw error;

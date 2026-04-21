@@ -5,40 +5,33 @@ import { DriveUploader } from "./DriveUploader.js";
 import { ThemeController } from "./ThemeController.js";
 import TourManager from "./TourManager.js";
 
-// Initialize theme immediately (before DOMContentLoaded to avoid flash)
+// Initialize global theme
 const themeCtrl = new ThemeController();
 
-// Page transition elements
+// --- Navigation Elements ---
 const landing = document.getElementById('landing');
 const appContainer = document.getElementById('appContainer');
 const btnParticipar = document.getElementById('btnParticipar');
 const btnBackToLanding = document.getElementById('btnBackToLanding');
 const btnStartTour = document.getElementById('btnStartTour');
 
-// Landing → App transition
 btnParticipar.addEventListener('click', () => {
     landing.classList.add('fade-out');
     setTimeout(() => {
         landing.classList.add('hidden');
-        appContainer.classList.remove('hidden');
+        appContainer.classList.remove('hidden', 'fade-in');
         appContainer.classList.add('fade-in');
-
-        // Show tour if it's the first time
-        setTimeout(() => TourManager.startTourAuto(), 400); // slight delay after fade-in
+        setTimeout(() => TourManager.startTourAuto(), 400);
     }, 350);
 });
 
-// App → Landing transition (back button)
 btnBackToLanding.addEventListener('click', () => {
     appContainer.classList.remove('fade-in');
     appContainer.classList.add('hidden');
     landing.classList.remove('hidden', 'fade-out');
 });
 
-// Manual Tour Trigger
-btnStartTour.addEventListener('click', () => {
-    TourManager.startTour();
-});
+btnStartTour.addEventListener('click', () => TourManager.startTour());
 
 class App {
     constructor() {
@@ -46,69 +39,125 @@ class App {
         this.camera = new CameraManager("webcam");
         this.uploader = new DriveUploader();
         this.recorder = null;
+        
+        this.currentRecording = null;
+        this.sessionId = this.generateSessionId();
+        this.participantId = this.getOrCreateParticipantId();
 
+        this.init();
+    }
+
+    async init() {
+        await this.ui.loadVocab();
         this.initEventListeners();
     }
 
-    initEventListeners() {
-        // --- Iniciar Cámara (Desktop + Mobile) ---
-        const startCameraHandler = async () => {
-            try {
-                // Disable both buttons
-                this.ui.btnStartCamera.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cargando...';
-                this.ui.btnStartCamera.disabled = true;
-                this.ui.btnStartCameraMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-                this.ui.btnStartCameraMobile.disabled = true;
+    /**
+     * Generates a persistent UUID for the participant.
+     */
+    getOrCreateParticipantId() {
+        let id = localStorage.getItem('lsp_participant_uuid');
+        if (!id) {
+            id = crypto.randomUUID ? crypto.randomUUID() : `P-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            localStorage.setItem('lsp_participant_uuid', id);
+        }
+        return id;
+    }
 
+    generateSessionId() {
+        const d = new Date();
+        const datePart = `${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}`;
+        const timePart = `${d.getHours().toString().padStart(2,'0')}${d.getMinutes().toString().padStart(2,'0')}`;
+        return `S-${datePart}-${timePart}`;
+    }
+
+    initEventListeners() {
+        // 1. Camera Initialization
+        const startCamera = async () => {
+            try {
+                this.ui.btnStartCamera.disabled = true;
+                this.ui.btnStartCamera.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cargando...';
+                
                 await this.camera.startCamera();
                 this.recorder = new RecorderManager(this.camera.getStream());
-
                 this.ui.setCameraReadyState();
             } catch (error) {
-                alert(error.message);
-                this.ui.btnStartCamera.innerHTML = '<i class="fa-solid fa-video"></i> Iniciar Cámara';
+                alert("Error cámara: " + error.message);
                 this.ui.btnStartCamera.disabled = false;
-                this.ui.btnStartCameraMobile.innerHTML = '<i class="fa-solid fa-video"></i> Iniciar Cámara';
-                this.ui.btnStartCameraMobile.disabled = false;
+                this.ui.btnStartCamera.innerHTML = '<i class="fa-solid fa-video"></i> Iniciar Cámara';
             }
         };
-        this.ui.btnStartCamera.addEventListener('click', startCameraHandler);
-        this.ui.btnStartCameraMobile.addEventListener('click', startCameraHandler);
+        this.ui.btnStartCamera.addEventListener('click', startCamera);
 
-        // --- Grabar (Desktop + Mobile) ---
-        const recordHandler = () => {
-            if (!this.ui.validateInputs()) return;
-            if (!this.recorder) return;
-
-            this.ui.setRecordingState();
-            this.recorder.startRecording();
+        // 2. Recording Flow (Toggle Pattern)
+        const toggleRecording = async () => {
+            // If not recording -> Start
+            if (this.ui.recordingBadge.classList.contains('hidden')) {
+                if (!this.ui.participantData) return alert("Primero confirma tus datos de participante.");
+                if (!this.ui.currentWord) return alert("Selecciona una palabra para grabar.");
+                
+                this.ui.setRecordingState();
+                this.recorder.startRecording();
+            } 
+            // If recording -> Stop
+            else {
+                const data = await this.recorder.stopRecording();
+                this.currentRecording = data;
+                this.ui.showPreview(data.videoBlob, {
+                    width: data.width,
+                    height: data.height,
+                    duration: data.duration
+                });
+            }
         };
-        this.ui.btnRecord.addEventListener('click', recordHandler);
-        this.ui.btnRecordMobile.addEventListener('click', recordHandler);
 
-        // --- Detener y Subir (Desktop + Mobile) ---
-        const stopHandler = async () => {
+        this.ui.btnRecord.addEventListener('click', toggleRecording);
+        this.ui.btnStop.addEventListener('click', toggleRecording);
+        this.ui.btnRecordMobile.addEventListener('click', toggleRecording);
+
+        // 3. Review & Upload Flow
+        this.ui.btnAccept.addEventListener('click', async () => {
             try {
                 this.ui.setUploadingState();
+                
+                const meta = this.ui.getMetadata();
+                const payload = {
+                    participant_id: this.participantId,
+                    alias: meta.participant.alias,
+                    session_id: this.sessionId,
+                    label_id: meta.word.label_id,
+                    label: meta.word.label,
+                    repetition: meta.repetition,
+                    capture_datetime: new Date().toISOString(),
+                    width: this.currentRecording.width,
+                    height: this.currentRecording.height,
+                    duration_sec: parseFloat(this.currentRecording.duration.toFixed(2)),
+                    device_type: /Mobi|Android/i.test(navigator.userAgent) ? "mobile" : "desktop",
+                    age: meta.participant.age,
+                    region: meta.participant.region,
+                    dominant_hand: meta.participant.hand,
+                    lsp_level: meta.participant.level,
+                    participant_type: meta.participant.type,
+                    consent_research: meta.consent_research,
+                    consent_training: meta.consent_training,
+                    consent_storage: meta.consent_storage,
+                    quality_status: "pending",
+                    review_status: "pending",
+                    processing_status: "raw"
+                };
 
-                const { videoBlob } = await this.recorder.stopRecording();
-                const { perfil, palabra, tipo } = this.ui.getInputs();
-
-                await this.uploader.uploadData(videoBlob, perfil, palabra, tipo);
-
+                const response = await this.uploader.uploadData(this.currentRecording.videoBlob, payload);
+                console.log("Subida exitosa:", response.sample_id);
+                
                 this.ui.setFinishedState();
-
-            } catch (e) {
-                console.error(e);
-                this.ui.setErrorState(e.message || "Error al subir video");
+                this.currentRecording = null;
+            } catch (error) {
+                this.ui.setErrorState(error.message);
             }
-        };
-        this.ui.btnStop.addEventListener('click', stopHandler);
-        this.ui.btnStopMobile.addEventListener('click', stopHandler);
+        });
     }
 }
 
-// Iniciar app al cargar
 document.addEventListener('DOMContentLoaded', () => {
     window.appInstance = new App();
 });

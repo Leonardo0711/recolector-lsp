@@ -4,11 +4,14 @@ export class RecorderManager {
         this.mediaRecorder = null;
         this.recordedChunks = [];
         this.videoBlob = null;
+        this.startTime = 0;
+        this.duration = 0;
     }
 
     startRecording() {
         this.recordedChunks = [];
         this.videoBlob = null;
+        this.startTime = performance.now();
 
         // Try getting WebM with codecs if possible
         let options = { mimeType: 'video/webm;codecs=vp9,opus' };
@@ -27,7 +30,6 @@ export class RecorderManager {
             }
         };
 
-        // Start video recording
         this.mediaRecorder.start();
         console.log("Grabación Iniciada.");
     }
@@ -40,12 +42,19 @@ export class RecorderManager {
             }
 
             this.mediaRecorder.onstop = () => {
-                // Get Video Blob
+                this.duration = (performance.now() - this.startTime) / 1000;
                 this.videoBlob = new Blob(this.recordedChunks, { type: 'video/webm' });
+
+                // Get resolution from stream
+                const track = this.stream.getVideoTracks()[0];
+                const settings = track.getSettings();
 
                 console.log("Grabación Detenida.");
                 resolve({
-                    videoBlob: this.videoBlob
+                    videoBlob: this.videoBlob,
+                    width: settings.width || 0,
+                    height: settings.height || 0,
+                    duration: this.duration
                 });
             };
 
