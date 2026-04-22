@@ -1642,6 +1642,47 @@ body {
 }
 
 // =============================================
+// SEARCH BOX
+// =============================================
+.search-box {
+    position: relative;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+
+    i {
+        position: absolute;
+        left: 12px;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        pointer-events: none;
+    }
+
+    input[type="text"] {
+        width: 100%;
+        padding: 10px 12px 10px 34px !important;
+        background: var(--bg-input);
+        border: 1px solid var(--bg-input-border);
+        border-radius: var(--radius-sm);
+        color: var(--text-main);
+        font-size: 0.88rem;
+        transition: all 0.2s;
+
+        &:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+            outline: none;
+        }
+
+        &::placeholder {
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+    }
+}
+
+// =============================================
 // SCIENTIFIC ANNOTATION PANEL
 // =============================================
 .scientific-annotation-container {

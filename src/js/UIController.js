@@ -30,6 +30,7 @@ export class UIController {
         this.wordSelectorCard = document.getElementById('wordSelectorCard');
         this.categorySelect = document.getElementById('categorySelect');
         this.wordSelect = document.getElementById('wordSelect');
+        this.wordSearch = document.getElementById('wordSearch');
         this.repetitionContainer = document.getElementById('repetitionContainer');
         this.repetitionCircles = document.querySelectorAll('.circle');
         this.promptInstructions = document.getElementById('promptInstructions');
@@ -90,6 +91,7 @@ export class UIController {
         this.initModeLogic();
         this.initReviewButtons();
         this.initProtocol();
+        this.initSearchLogic();
         
         // Load existing participant if available
         this.loadParticipantFromStorage();
@@ -138,14 +140,47 @@ export class UIController {
         if (mode === 'continuous') {
             this.selectorTitle.textContent = "Prompt Continuo";
             this.categorySelect.classList.add('hidden');
+            this.wordSearch.classList.remove('hidden'); // Show search for continuous too
             this.repetitionContainer.classList.add('hidden');
             this.populateContinuousList(this.vocab);
         } else {
             this.selectorTitle.textContent = mode === 'template' ? "Secuencia a Grabar" : "Palabra a Grabar";
             this.categorySelect.classList.remove('hidden');
+            this.wordSearch.classList.remove('hidden');
             this.repetitionContainer.classList.remove('hidden');
-            this.populateCategories(this.vocab.map(c => c.category));
+            
+            // Extract unique categories from flat list
+            const uniqueCats = [...new Set(this.vocab.map(v => v.categoria))].filter(Boolean).sort();
+            this.populateCategories(uniqueCats);
         }
+    }
+
+    initSearchLogic() {
+        this.wordSearch.oninput = () => {
+            const query = this.wordSearch.value.toLowerCase();
+            const mode = this.modeSelect.value;
+            
+            let filtered = [];
+            if (mode === 'continuous') {
+                filtered = this.vocab.filter(v => v.prompt_text.toLowerCase().includes(query));
+                this.renderWordOptions(filtered, 'prompt_id', 'prompt_text');
+            } else {
+                const cat = this.categorySelect.value;
+                filtered = this.vocab.filter(v => v.categoria === cat && v.label.toLowerCase().includes(query));
+                this.renderWordOptions(filtered, 'label_id', 'label');
+            }
+        };
+    }
+
+    renderWordOptions(items, idKey, textKey) {
+        this.wordSelect.innerHTML = '<option value="">-- Seleccionar --</option>';
+        items.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item[idKey];
+            opt.textContent = item[textKey];
+            this.wordSelect.appendChild(opt);
+        });
+        this.wordSelect.disabled = items.length === 0;
     }
 
     populateCategories(categories) {
@@ -159,21 +194,15 @@ export class UIController {
 
         this.categorySelect.onchange = () => {
             const cat = this.categorySelect.value;
-            const words = this.vocab.find(c => c.category === cat)?.items || [];
+            const words = this.vocab.filter(v => v.categoria === cat);
+            this.wordSearch.value = ""; // Reset search on cat change
             this.populateWords(words);
         };
     }
 
     populateWords(words) {
-        this.wordSelect.innerHTML = '<option value="">Selecciona Item</option>';
-        words.forEach(v => {
-            const opt = document.createElement('option');
-            opt.value = v.label_id;
-            opt.textContent = v.label;
-            this.wordSelect.appendChild(opt);
-        });
-        this.wordSelect.disabled = false;
-
+        this.renderWordOptions(words, 'label_id', 'label');
+        
         this.wordSelect.onchange = () => {
             this.currentWord = words.find(v => v.label_id === this.wordSelect.value);
             this.updatePromptUI();
@@ -183,13 +212,7 @@ export class UIController {
     }
 
     populateContinuousList(items) {
-        this.wordSelect.innerHTML = '<option value="">-- Seleccionar Prompt --</option>';
-        items.forEach(item => {
-            const opt = document.createElement('option');
-            opt.value = item.prompt_id;
-            opt.textContent = item.prompt_text;
-            this.wordSelect.appendChild(opt);
-        });
+        this.renderWordOptions(items, 'prompt_id', 'prompt_text');
 
         this.wordSelect.onchange = () => {
             const promptId = this.wordSelect.value;

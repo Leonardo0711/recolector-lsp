@@ -226,14 +226,19 @@
                 </div>
 
                 <div class="input-group">
-                    <select id="categorySelect">
-                        <option value="">Selecciona Categoría</option>
-                    </select>
-                    
+                    <label for="categorySelect">Categoría</label>
+                    <select id="categorySelect"></select>
+                </div>
+
+                <div class="input-group">
+                    <label for="wordSelect">Ítem a grabar</label>
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="wordSearch" placeholder="Buscar seña..." class="hidden">
+                    </div>
                     <select id="wordSelect" disabled>
                         <option value="">Primero elige categoría</option>
                     </select>
-
                     <div class="repetition-indicator" id="repetitionContainer">
                         <span>Repetición:</span>
                         <div id="repetitionCircles" class="circles">
