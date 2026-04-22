@@ -1,0 +1,37 @@
+[
+  {
+    "prompt_id": "P001",
+    "prompt_text": "Preséntate y di tu nombre, edad y de dónde eres.",
+    "duration_min": 8,
+    "duration_max": 20,
+    "activo": true
+  },
+  {
+    "prompt_id": "P002",
+    "prompt_text": "Cuenta qué hiciste hoy desde que te despertaste.",
+    "duration_min": 10,
+    "duration_max": 25,
+    "activo": true
+  },
+  {
+    "prompt_id": "P003",
+    "prompt_text": "Explica cómo llegar a tu casa desde el centro de la ciudad.",
+    "duration_min": 12,
+    "duration_max": 30,
+    "activo": true
+  },
+  {
+    "prompt_id": "P004",
+    "prompt_text": "Describe cómo te sientes hoy y por qué.",
+    "duration_min": 8,
+    "duration_max": 20,
+    "activo": true
+  },
+  {
+    "prompt_id": "P005",
+    "prompt_text": "Habla sobre tu comida peruana favorita y cómo se prepara.",
+    "duration_min": 15,
+    "duration_max": 40,
+    "activo": true
+  }
+]

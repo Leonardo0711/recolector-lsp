@@ -1,0 +1,58 @@
+[
+  {
+    "prompt_id": "T001",
+    "prompt_text": "YO ESTAR BIEN",
+    "expected_sequence": ["YO", "ESTAR", "BIEN"],
+    "categoria": "basico",
+    "activo": true
+  },
+  {
+    "prompt_id": "T002",
+    "prompt_text": "YO NO ENTENDER",
+    "expected_sequence": ["YO", "NO", "ENTENDER"],
+    "categoria": "basico",
+    "activo": true
+  },
+  {
+    "prompt_id": "T003",
+    "prompt_text": "TU NOMBRE QUE",
+    "expected_sequence": ["TU", "NOMBRE", "QUE"],
+    "categoria": "identidad",
+    "activo": true
+  },
+  {
+    "prompt_id": "T004",
+    "prompt_text": "YO NECESITAR AYUDA",
+    "expected_sequence": ["YO", "NECESITAR", "AYUDA"],
+    "categoria": "emergencia",
+    "activo": true
+  },
+  {
+    "prompt_id": "T005",
+    "prompt_text": "HOY TRABAJO",
+    "expected_sequence": ["HOY", "TRABAJO"],
+    "categoria": "tiempo",
+    "activo": true
+  },
+  {
+    "prompt_id": "T006",
+    "prompt_text": "MAÑANA ESCUELA",
+    "expected_sequence": ["MAÑANA", "ESCUELA"],
+    "categoria": "tiempo",
+    "activo": true
+  },
+  {
+    "prompt_id": "T007",
+    "prompt_text": "NOSOTROS IR CASA",
+    "expected_sequence": ["NOSOTROS", "IR", "CASA"],
+    "categoria": "otros",
+    "activo": true
+  },
+  {
+    "prompt_id": "T008",
+    "prompt_text": "ELLA SER MADRE",
+    "expected_sequence": ["ELLA", "SER", "MADRE"],
+    "categoria": "familia",
+    "activo": true
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {"prompt_id": "E001", "label": "BUENOS DIAS", "categoria": "cortesia", "activo": true},
+  {"prompt_id": "E002", "label": "BUENAS TARDES", "categoria": "cortesia", "activo": true},
+  {"prompt_id": "E003", "label": "BUENAS NOCHES", "categoria": "cortesia", "activo": true},
+  {"prompt_id": "E004", "label": "POR FAVOR", "categoria": "cortesia", "activo": true},
+  {"prompt_id": "E005", "label": "COMO ESTAS", "categoria": "preguntas", "activo": true},
+  {"prompt_id": "E006", "label": "Y TU", "categoria": "preguntas", "activo": true},
+  {"prompt_id": "E007", "label": "MAS O MENOS", "categoria": "emociones", "activo": true},
+  {"prompt_id": "E008", "label": "NO ENTIENDO", "categoria": "basico", "activo": true},
+  {"prompt_id": "E009", "label": "MUCHAS GRACIAS", "categoria": "cortesia", "activo": true},
+  {"prompt_id": "E010", "label": "NO SE", "categoria": "basico", "activo": true}
+]

@@ -110,7 +110,7 @@ export class UIController {
         }
 
         try {
-            const response = await fetch(`./src/data/${file}`);
+            const response = await fetch(`./data/${file}`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
             
