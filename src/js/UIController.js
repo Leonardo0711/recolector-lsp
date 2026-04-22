@@ -112,12 +112,22 @@ export class UIController {
         try {
             const response = await fetch(`./src/data/${file}`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            this.vocab = await response.json();
-            console.log("Vocabulario cargado:", this.vocab.length, "ítems");
+            const data = await response.json();
+            
+            // Robustness: Handle if data is wrapped in an object or is a direct array
+            this.vocab = Array.isArray(data) ? data : (data.items || data.data || []);
+            
+            console.log(`Vocabulario cargado (${file}):`, this.vocab.length, "ítems");
+            if (this.vocab.length > 0) {
+                console.log("Ejemplo ítem:", this.vocab[0]);
+            } else {
+                console.warn("El vocabulario está vacío.");
+            }
+            
             this.updateSelectorUI();
         } catch (error) {
-            console.error("Error cargando vocabulario:", error);
-            alert("No se pudo cargar el léxico. Revisa la consola o la conexión.");
+            console.error("Error crítico cargando vocabulario:", error);
+            alert(`Error de datos: No se pudo cargar ${file}. Verifica que el archivo existe en src/data/`);
         }
     }
 
@@ -137,40 +147,63 @@ export class UIController {
 
     updateSelectorUI() {
         const mode = this.modeSelect.value;
-        this.categorySelect.innerHTML = '<option value="">Selecciona Categoría</option>';
-        this.wordSelect.innerHTML = '<option value="">Selecciona Item</option>';
+        this.categorySelect.innerHTML = '<option value="">-- Selecciona Categoría --</option>';
+        this.wordSelect.innerHTML = '<option value="">-- Selecciona Ítem --</option>';
         this.wordSelect.disabled = true;
+
+        if (!this.vocab || this.vocab.length === 0) {
+            console.warn("No hay vocabulario para mostrar en la UI.");
+            return;
+        }
 
         if (mode === 'continuous') {
             this.selectorTitle.textContent = "Prompt Continuo";
-            this.categorySelect.classList.add('hidden');
-            this.wordSearch.classList.remove('hidden'); // Show search for continuous too
+            this.categorySelect.parentElement.classList.add('hidden');
+            this.searchContainer.classList.remove('hidden');
             this.repetitionContainer.classList.add('hidden');
             this.populateContinuousList(this.vocab);
         } else {
             this.selectorTitle.textContent = mode === 'template' ? "Secuencia a Grabar" : "Palabra a Grabar";
-            this.categorySelect.classList.remove('hidden');
-            this.wordSearch.parentElement.classList.remove('hidden');
+            this.categorySelect.parentElement.classList.remove('hidden');
+            this.searchContainer.classList.remove('hidden');
             this.repetitionContainer.classList.remove('hidden');
             
-            // Extract unique categories from flat list
-            const uniqueCats = [...new Set(this.vocab.map(v => v.categoria))].filter(Boolean).sort();
+            // Extract unique categories robustly
+            const cats = this.vocab.map(v => v.categoria || v.category || v.group).filter(Boolean);
+            const uniqueCats = Array.from(new Set(cats)).sort();
+            
+            console.log("Categorías detectadas:", uniqueCats);
             this.populateCategories(uniqueCats);
         }
     }
 
     initSearchLogic() {
         this.wordSearch.oninput = () => {
-            const query = this.wordSearch.value.toLowerCase();
+            const query = this.wordSearch.value.toLowerCase().trim();
             const mode = this.modeSelect.value;
             
+            if (query === "") {
+                if (mode === 'continuous') this.populateContinuousList(this.vocab);
+                else {
+                    const cat = this.categorySelect.value;
+                    const words = cat ? this.vocab.filter(v => (v.categoria || v.category) === cat) : [];
+                    this.populateWords(words);
+                }
+                return;
+            }
+
             let filtered = [];
             if (mode === 'continuous') {
                 filtered = this.vocab.filter(v => v.prompt_text.toLowerCase().includes(query));
                 this.renderWordOptions(filtered, 'prompt_id', 'prompt_text');
             } else {
                 const cat = this.categorySelect.value;
-                filtered = this.vocab.filter(v => v.categoria === cat && v.label.toLowerCase().includes(query));
+                // Allow search across ALL categories if none selected, or filter by current
+                filtered = this.vocab.filter(v => {
+                    const matchesCat = !cat || (v.categoria || v.category) === cat;
+                    const label = (v.label || v.prompt_text || "").toLowerCase();
+                    return matchesCat && label.includes(query);
+                });
                 this.renderWordOptions(filtered, 'label_id', 'label');
             }
         };
@@ -188,7 +221,14 @@ export class UIController {
     }
 
     populateCategories(categories) {
-        this.categorySelect.innerHTML = '<option value="">-- Seleccionar --</option>';
+        this.categorySelect.innerHTML = '<option value="">-- Elige Categoría --</option>';
+        if (categories.length === 0) {
+            const opt = document.createElement('option');
+            opt.textContent = "(No se encontraron categorías)";
+            this.categorySelect.appendChild(opt);
+            return;
+        }
+
         categories.forEach(cat => {
             const opt = document.createElement('option');
             opt.value = cat;
@@ -198,7 +238,7 @@ export class UIController {
 
         this.categorySelect.onchange = () => {
             const cat = this.categorySelect.value;
-            const words = this.vocab.filter(v => v.categoria === cat);
+            const words = this.vocab.filter(v => (v.categoria || v.category) === cat);
             this.wordSearch.value = ""; // Reset search on cat change
             this.populateWords(words);
         };
