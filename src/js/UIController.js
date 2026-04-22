@@ -31,6 +31,7 @@ export class UIController {
         this.categorySelect = document.getElementById('categorySelect');
         this.wordSelect = document.getElementById('wordSelect');
         this.wordSearch = document.getElementById('wordSearch');
+        this.searchContainer = document.getElementById('searchContainer');
         this.repetitionContainer = document.getElementById('repetitionContainer');
         this.repetitionCircles = document.querySelectorAll('.circle');
         this.promptInstructions = document.getElementById('promptInstructions');
@@ -110,10 +111,13 @@ export class UIController {
 
         try {
             const response = await fetch(`./src/data/${file}`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             this.vocab = await response.json();
+            console.log("Vocabulario cargado:", this.vocab.length, "ítems");
             this.updateSelectorUI();
         } catch (error) {
-            console.error("Error loading vocab:", error);
+            console.error("Error cargando vocabulario:", error);
+            alert("No se pudo cargar el léxico. Revisa la consola o la conexión.");
         }
     }
 
@@ -146,7 +150,7 @@ export class UIController {
         } else {
             this.selectorTitle.textContent = mode === 'template' ? "Secuencia a Grabar" : "Palabra a Grabar";
             this.categorySelect.classList.remove('hidden');
-            this.wordSearch.classList.remove('hidden');
+            this.wordSearch.parentElement.classList.remove('hidden');
             this.repetitionContainer.classList.remove('hidden');
             
             // Extract unique categories from flat list
