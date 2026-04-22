@@ -44,14 +44,22 @@ export class UIController {
         this.btnStop = document.getElementById('btnStop');
         this.btnRecordMobile = document.getElementById('btnRecordMobile');
         
-        // --- Review & Status ---
+        // --- Review & Annotation ---
         this.reviewOverlay = document.getElementById('reviewOverlay');
         this.btnAccept = document.getElementById('btnAccept');
         this.btnRepeat = document.getElementById('btnRepeat');
         this.techStats = document.getElementById('techStats');
         this.statRes = document.getElementById('statRes');
         this.statDur = document.getElementById('statDur');
-        this.qualityFlagContainer = document.getElementById('qualityFlagContainer');
+        
+        // Scientific Annotation Panel
+        this.annotationPanel = document.getElementById('annotationPanel');
+        this.producedTextEs = document.getElementById('producedTextEs');
+        this.handsVisible = document.getElementById('handsVisible');
+        this.faceVisible = document.getElementById('faceVisible');
+        this.bodyVisible = document.getElementById('bodyVisible');
+        this.promptAdherence = document.getElementById('promptAdherence');
+        this.occlusionLevel = document.getElementById('occlusionLevel');
         this.flagIncomplete = document.getElementById('flagIncomplete');
 
         // --- Protocol ---
@@ -131,71 +139,68 @@ export class UIController {
             this.selectorTitle.textContent = "Prompt Continuo";
             this.categorySelect.classList.add('hidden');
             this.repetitionContainer.classList.add('hidden');
-            this.populateContinuousList();
+            this.populateContinuousList(this.vocab);
         } else {
             this.selectorTitle.textContent = mode === 'template' ? "Secuencia a Grabar" : "Palabra a Grabar";
             this.categorySelect.classList.remove('hidden');
             this.repetitionContainer.classList.remove('hidden');
-            this.populateCategories();
+            this.populateCategories(this.vocab.map(c => c.category));
         }
     }
 
-    populateCategories() {
-        const categories = [...new Set(this.vocab.map(v => v.categoria))];
+    populateCategories(categories) {
+        this.categorySelect.innerHTML = '<option value="">-- Seleccionar --</option>';
         categories.forEach(cat => {
-            if (!cat) return;
             const opt = document.createElement('option');
             opt.value = cat;
-            opt.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+            opt.textContent = cat;
             this.categorySelect.appendChild(opt);
         });
 
-        this.categorySelect.addEventListener('change', () => {
-            this.populateWords(this.categorySelect.value);
-        });
+        this.categorySelect.onchange = () => {
+            const cat = this.categorySelect.value;
+            const words = this.vocab.find(c => c.category === cat)?.items || [];
+            this.populateWords(words);
+        };
+    }
 
-        this.wordSelect.addEventListener('change', () => {
-            this.currentWord = this.vocab.find(v => (v.label_id || v.prompt_id) === this.wordSelect.value);
-            this.updatePromptInfo();
+    populateWords(words) {
+        this.wordSelect.innerHTML = '<option value="">Selecciona Item</option>';
+        words.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.label_id;
+            opt.textContent = v.label;
+            this.wordSelect.appendChild(opt);
+        });
+        this.wordSelect.disabled = false;
+
+        this.wordSelect.onchange = () => {
+            this.currentWord = words.find(v => v.label_id === this.wordSelect.value);
+            this.updatePromptUI();
             this.loadRepetitionProgress();
             this.updateRepetitionUI();
-        });
+        };
     }
 
-    populateWords(category) {
-        this.wordSelect.innerHTML = '<option value="">Selecciona Item</option>';
-        if (!category) {
-            this.wordSelect.disabled = true;
-            return;
-        }
-
-        const filtered = this.vocab.filter(v => v.categoria === category && v.activo);
-        filtered.forEach(v => {
+    populateContinuousList(items) {
+        this.wordSelect.innerHTML = '<option value="">-- Seleccionar Prompt --</option>';
+        items.forEach(item => {
             const opt = document.createElement('option');
-            opt.value = v.label_id || v.prompt_id;
-            opt.textContent = v.label || v.prompt_text;
+            opt.value = item.prompt_id;
+            opt.textContent = item.prompt_text;
             this.wordSelect.appendChild(opt);
         });
-        this.wordSelect.disabled = false;
+
+        this.wordSelect.onchange = () => {
+            const promptId = this.wordSelect.value;
+            this.currentWord = items.find(i => i.prompt_id === promptId);
+            this.updatePromptUI();
+            this.loadRepetitionProgress();
+            this.updateRepetitionUI();
+        };
     }
 
-    populateContinuousList() {
-        this.wordSelect.innerHTML = '<option value="">Selecciona Prompt</option>';
-        this.vocab.forEach(v => {
-            const opt = document.createElement('option');
-            opt.value = v.prompt_id;
-            opt.textContent = v.prompt_text.length > 40 ? v.prompt_text.substring(0, 40) + '...' : v.prompt_text;
-            this.wordSelect.appendChild(opt);
-        });
-        this.wordSelect.disabled = false;
-        
-        this.wordSelect.addEventListener('change', () => {
-             this.currentWord = this.vocab.find(v => v.prompt_id === this.wordSelect.value);
-             this.updatePromptInfo();
-        });
-    }
-
-    updatePromptInfo() {
+    updatePromptUI() {
         if (!this.currentWord) {
             this.promptInstructions.classList.add('hidden');
             return;
@@ -221,13 +226,11 @@ export class UIController {
             return;
         }
 
-        const key = `lsp_rep_${participantUuid}_${this.currentWord.label_id}`;
+        const id = this.currentWord.label_id || this.currentWord.prompt_id;
+        const key = `lsp_rep_${participantUuid}_${id}`;
         const saved = localStorage.getItem(key);
         this.currentRepetition = saved ? parseInt(saved) : 1;
         
-        // If they already did 5, but didn't switch word, keep it at 5 or handle reset?
-        // Let's stick to the current logic: if they finished 5, it stays at 1? 
-        // Actually, let's allow them to see it's 6/5 (meaning all done) or cap it.
         if (this.currentRepetition > 5) {
              // Word fully recorded.
         }
@@ -238,7 +241,8 @@ export class UIController {
         const participantUuid = localStorage.getItem('lsp_participant_uuid');
         if (!participantUuid) return;
 
-        const key = `lsp_rep_${participantUuid}_${this.currentWord.label_id}`;
+        const id = this.currentWord.label_id || this.currentWord.prompt_id;
+        const key = `lsp_rep_${participantUuid}_${id}`;
         localStorage.setItem(key, this.currentRepetition);
     }
 
@@ -263,12 +267,12 @@ export class UIController {
             this.participantLevel.value = p.level;
             this.participantType.value = p.type;
             
-            // Re-check consent if they previously accepted? 
-            // Better to make them check consent every fresh session or remember it?
-            // User requested robust progress, so let's remember consent if saved.
-            Object.values(this.consentCheckboxes).forEach(cb => cb.checked = true);
+            // Ethics: Do NOT auto-check consents OR auto-lock. 
+            // The user must manually confirm ethical adherence in each session.
+            Object.values(this.consentCheckboxes).forEach(cb => cb.checked = false);
             
-            this.lockParticipantForm();
+            // We populate the fields but leave the form UNLOCKED 
+            // so they can check consents and click "Save" to activate the session.
         }
     }
 
@@ -394,14 +398,19 @@ export class UIController {
         this.previewPlayer.classList.remove('hidden');
         this.webcam.classList.add('hidden');
 
-        // Show Review Overlay
+        // Show Review Overlay & Scientific Annotation
         this.reviewOverlay.classList.remove('hidden');
-        this.qualityFlagContainer.classList.remove('hidden');
+        this.annotationPanel.classList.remove('hidden');
+        
+        // Rigor: Do NOT pre-fill value (to avoid contamination). 
+        // Use placeholder as hint so the annotator must explicitly confirm/type.
+        this.producedTextEs.value = "";
+        this.producedTextEs.placeholder = `Sugerido: ${this.currentWord.prompt_text || this.currentWord.label || ""}`;
     }
 
     hidePreview() {
         this.reviewOverlay.classList.add('hidden');
-        this.qualityFlagContainer.classList.add('hidden');
+        this.annotationPanel.classList.add('hidden');
         this.flagIncomplete.checked = false;
         this.previewPlayer.classList.add('hidden');
         this.previewPlayer.src = "";
@@ -472,21 +481,52 @@ export class UIController {
 
     getMetadata() {
         const mode = this.modeSelect.value;
+        const p = this.participantData || {};
+        const w = this.currentWord || {};
+
         return {
-            participant: this.participantData,
+            // Participant (Flattened and Mapped for GAS)
+            participant_id: localStorage.getItem('lsp_participant_uuid'),
+            alias: p.alias,
+            age: p.age,
+            region: p.region,
+            dominant_hand: p.hand,
+            lsp_level: p.level,
+            participant_type: p.type,
+
+            // Ethical Consent (Actual states + explicit age consent)
+            consent_research: this.consentCheckboxes.research.checked,
+            consent_training: this.consentCheckboxes.training.checked,
+            consent_storage: this.consentCheckboxes.storage.checked,
+            consent_age: this.consentCheckboxes.age.checked,
+
+            // Capture Metadata
             capture_mode: mode,
-            word: this.currentWord,
-            prompt_id: this.currentWord.prompt_id || this.currentWord.label_id,
-            prompt_text: this.currentWord.prompt_text || this.currentWord.label,
-            expected_sequence: this.currentWord.expected_sequence || [],
-            sequence_length: this.currentWord.expected_sequence ? this.currentWord.expected_sequence.length : 1,
+            label_id: w.label_id || w.prompt_id || "N/A",
+            label: w.label || w.prompt_text || "N/A",
+            prompt_id: w.prompt_id || w.label_id || "N/A",
+            prompt_text: w.prompt_text || w.label || "N/A",
             repetition: this.currentRepetition,
+            
+            // Translation & Linguistic (Real production annotation)
+            produced_text_es: this.producedTextEs.value.trim(),
+            produced_text_es_normalized: this.producedTextEs.value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""), 
+            gloss_reference: w.gloss_reference || "",
+            annotation_status: "self_annotated",
+            split: "unassigned",
+            
+            // Quality Flags (In-situ scientific annotation)
             failed_capture: this.flagIncomplete.checked,
-            app_version: "1.0.0-phase1",
-            dataset_phase: "1",
-            consent_research: true,
-            consent_training: true,
-            consent_storage: true
+            hands_visible: this.handsVisible.checked,
+            face_visible: this.faceVisible.checked,
+            body_visible: this.bodyVisible.checked,
+            occlusion_level: this.occlusionLevel.value,
+            linguistic_acceptability: "pending_review",
+            prompt_adherence: this.promptAdherence.checked,
+            
+            // Technical
+            app_version: "2.1.0-scientific-ready",
+            dataset_phase: "1-B"
         };
     }
 }

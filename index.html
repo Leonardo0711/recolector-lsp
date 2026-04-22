@@ -274,11 +274,47 @@
                     </div>
                 </div>
 
-                <!-- Flag de repetición por calidad -->
-                <div class="quality-flag-container hidden" id="qualityFlagContainer">
-                    <label class="consent-item">
+                <!-- Panel de Anotación Científica (Review Phase) -->
+                <div class="scientific-annotation-container hidden" id="annotationPanel">
+                    <h4><i class="fa-solid fa-microscope"></i> Anotación Rápida</h4>
+                    
+                    <div class="annotation-group">
+                        <label>Texto Producido (Real)</label>
+                        <input type="text" id="producedTextEs" placeholder="Lo que se señó realmente...">
+                    </div>
+
+                    <div class="annotation-grid">
+                        <label class="check-item">
+                            <input type="checkbox" id="handsVisible" checked>
+                            <span>Manos</span>
+                        </label>
+                        <label class="check-item">
+                            <input type="checkbox" id="faceVisible" checked>
+                            <span>Rostro</span>
+                        </label>
+                        <label class="check-item">
+                            <input type="checkbox" id="bodyVisible" checked>
+                            <span>Hombros</span>
+                        </label>
+                        <label class="check-item">
+                            <input type="checkbox" id="promptAdherence" checked>
+                            <span>Adherencia</span>
+                        </label>
+                    </div>
+
+                    <div class="annotation-group">
+                        <label>Nivel de Oclusión</label>
+                        <select id="occlusionLevel">
+                            <option value="none">Ninguna</option>
+                            <option value="low" selected>Baja</option>
+                            <option value="medium">Media</option>
+                            <option value="high">Alta (Crítica)</option>
+                        </select>
+                    </div>
+
+                    <label class="check-item warning">
                         <input type="checkbox" id="flagIncomplete">
-                        <span class="text-warning"><i class="fa-solid fa-triangle-exclamation"></i> Seña incompleta (repetir)</span>
+                        <span><i class="fa-solid fa-triangle-exclamation"></i> Seña incompleta</span>
                     </label>
                 </div>
             </div>

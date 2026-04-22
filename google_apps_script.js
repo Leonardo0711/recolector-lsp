@@ -84,6 +84,7 @@ function validatePayload(m, video) {
   if (!m.consent_research) return "Falta consentimiento: investigación";
   if (!m.consent_training) return "Falta consentimiento: entrenamiento";
   if (!m.consent_storage) return "Falta consentimiento: almacenamiento";
+  if (!m.consent_age) return "Falta consentimiento: mayoría de edad";
   if (!m.age) return "Falta validación de edad del participante";
 
   // Validaciones por modo (Duración mínima sugerida)
@@ -111,8 +112,12 @@ function updateMasterSheets(m) {
   const sampleHeaders = [
     "sample_id", "participant_id", "session_id", "capture_mode", 
     "label_id", "label", "prompt_id", "prompt_text", 
+    "produced_text_es", "produced_text_es_normalized", "gloss_reference",
     "repetition", "capture_datetime", "duration_sec", "width", "height",
-    "failed_capture", "app_version", "dataset_phase", "video_url", "json_url"
+    "hands_visible", "face_visible", "body_visible", "occlusion_level",
+    "linguistic_acceptability", "prompt_adherence",
+    "annotation_status", "split", "failed_capture", 
+    "consent_age", "app_version", "dataset_phase", "video_url", "json_url"
   ];
   appendDataToSheet(samplesSheet, sampleHeaders, m);
 
@@ -120,11 +125,11 @@ function updateMasterSheets(m) {
   const participantsSheet = getOrCreateSheet(ss, "participants");
   const partHeaders = [
     "participant_id", "alias", "age", "region", "dominant_hand", 
-    "lsp_level", "participant_type", "consent_research", "consent_training", "consent_storage"
+    "lsp_level", "participant_type", "consent_research", "consent_training", "consent_storage", "consent_age"
   ];
   // Solo agregar si el participante no existe ya (Búsqueda básica por ID)
   if (!findInSheet(participantsSheet, m.participant_id, 1)) {
-    appendDataToSheet(participantsSheet, partHeaders, m.participant || m);
+    appendDataToSheet(participantsSheet, partHeaders, m);
   }
 }
 

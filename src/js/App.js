@@ -143,10 +143,8 @@ class App {
                     
                     const meta = this.ui.getMetadata();
                     const payload = {
-                        ...meta, // All UI metadata (capture_mode, IDs, labels, flags, etc.)
+                        ...meta, 
                         session_id: this.sessionId,
-                        participant_id: this.participantId,
-                        alias: meta.participant.alias,
                         capture_datetime: new Date().toISOString(),
                         width: this.currentRecording.width,
                         height: this.currentRecording.height,

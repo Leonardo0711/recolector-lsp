@@ -10,6 +10,24 @@ Este proyecto es una plataforma web profesional diseñada para recolectar un dat
 *   **Validación de Calidad**: Fase de revisión post-captura con opción de marcar muestras incompletas para auditoría.
 *   **Infraestructura Escalable**: Integración directa con Google Drive y Google Sheets (Índice Maestro) con organización jerárquica automática.
 
+### 🛠️ Arquitectura Técnica
+- **Frontend**: Vite + Javascript (ES6) + SCSS.
+- **Backend**: Google Apps Script (GAS) v3.0 (Video Upload via Base64).
+- **Almacenamiento**: Google Drive + Google Sheets (Índice Maestro).
+
+---
+
+### ⚠️ Limitaciones y Roadmap (Fase 1-B)
+
+El sistema actual es una estación de adquisición **controlada**. Para escalar a un traductor continuo masivo, se han identificado las siguientes evoluciones necesarias:
+
+1.  **Cuello de Botella de Subida**: Actualmente se usa Base64 hacia GAS. Para clips de larga duración (>20s), esto puede causar latencia y errores de cuota.
+    - *Solución planeada*: Migrar a subida directa por chunks a Google Cloud Storage o AWS S3.
+2.  **Pipeline de Anotación**: Los campos `split`, `annotation_status` y `linguistic_acceptability` son operativos (placeholders). 
+    - *Solución planeada*: Integrar una herramienta de revisión por terceros (peer-review) para validar las capturas `self_annotated`.
+3.  **Sincronización de Landmarks**: El recolector captura video bruto.
+    - *Solución planeada*: Implementar MediaPipe en el backend para generar automáticamente archivos `.json` con landmarks sincronizados por muestra.
+
 ## Estructura del Dataset (Drive)
 
 El sistema organiza los archivos siguiendo una jerarquía científica para facilitar el entrenamiento de modelos:
