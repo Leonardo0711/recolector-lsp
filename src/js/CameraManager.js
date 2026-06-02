@@ -12,6 +12,7 @@ export class CameraManager {
                 video: {
                     width: { ideal: 1280, min: 640 },
                     height: { ideal: 720, min: 480 },
+                    frameRate: { ideal: 30, max: 30 }, // Evitar 60fps para optimizar rendimiento y CPU en móviles
                     facingMode: this.facingMode
                 },
                 audio: false

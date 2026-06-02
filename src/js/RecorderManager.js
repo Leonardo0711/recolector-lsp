@@ -13,13 +13,29 @@ export class RecorderManager {
         this.videoBlob = null;
         this.startTime = performance.now();
 
-        // Try getting WebM with codecs if possible (video only)
-        let options = { mimeType: 'video/webm;codecs=vp9' };
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-            options = { mimeType: 'video/webm;codecs=vp8' };
-            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                options = { mimeType: 'video/webm' };
+        // Priorizar códecs que suelen tener aceleración por hardware en móviles (H.264/AVC)
+        let options = {};
+        const candidates = [
+            'video/webm;codecs=h264',
+            'video/mp4;codecs=avc1',
+            'video/webm;codecs=vp8',
+            'video/webm',
+            'video/mp4'
+        ];
+
+        let selectedMimeType = '';
+        for (const mime of candidates) {
+            if (MediaRecorder.isTypeSupported(mime)) {
+                selectedMimeType = mime;
+                break;
             }
+        }
+
+        if (selectedMimeType) {
+            options.mimeType = selectedMimeType;
+            console.log("MIME Type seleccionado para grabación:", selectedMimeType);
+        } else {
+            console.warn("Ninguno de los MIME types preferidos está soportado. Usando valor por defecto.");
         }
 
         this.mediaRecorder = new MediaRecorder(this.stream, options);
@@ -43,7 +59,8 @@ export class RecorderManager {
 
             this.mediaRecorder.onstop = () => {
                 this.duration = (performance.now() - this.startTime) / 1000;
-                this.videoBlob = new Blob(this.recordedChunks, { type: 'video/webm' });
+                const currentMimeType = this.mediaRecorder.mimeType || 'video/webm';
+                this.videoBlob = new Blob(this.recordedChunks, { type: currentMimeType });
 
                 // Get resolution from stream
                 const track = this.stream.getVideoTracks()[0];

@@ -44,10 +44,20 @@ function doPost(e) {
     const metaDest = getOrCreateSubFolder(getOrCreateSubFolder(metadataRoot, year), month);
 
     // 3. Guardar Video
+    let mimeType = 'video/webm';
+    let extension = 'webm';
+    if (videoBase64.indexOf('video/mp4') !== -1) {
+      mimeType = 'video/mp4';
+      extension = 'mp4';
+    } else if (videoBase64.indexOf('video/ogg') !== -1) {
+      mimeType = 'video/ogg';
+      extension = 'ogv';
+    }
+
     const videoBlob = Utilities.newBlob(
       Utilities.base64Decode(videoBase64.split(',')[1]), 
-      'video/webm', 
-      `${sampleId}.webm`
+      mimeType, 
+      `${sampleId}.${extension}`
     );
     const videoFile = videoDest.createFile(videoBlob);
 
