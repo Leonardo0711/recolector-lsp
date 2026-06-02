@@ -42,6 +42,7 @@ export class UIController {
         this.webcam = document.getElementById('webcam');
         this.previewPlayer = document.getElementById('previewPlayer');
         this.btnStartCamera = document.getElementById('btnStartCamera');
+        this.btnStartCameraMobile = document.getElementById('btnStartCameraMobile');
         this.btnRecord = document.getElementById('btnRecord');
         this.btnStop = document.getElementById('btnStop');
         this.btnRecordMobile = document.getElementById('btnRecordMobile');
@@ -416,6 +417,7 @@ export class UIController {
     // ========== STATE TRANSITIONS ==========
     setCameraReadyState() {
         this.btnStartCamera.classList.add('hidden');
+        if (this.btnStartCameraMobile) this.btnStartCameraMobile.classList.add('hidden');
         this.btnRecord.disabled = false;
         this.btnRecordMobile.disabled = false;
         this.btnRecordMobile.classList.remove('hidden');

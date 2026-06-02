@@ -83,11 +83,14 @@ class App {
     }
 
     initEventListeners() {
-        // 1. Camera Initialization
         const startCamera = async () => {
             try {
                 this.ui.btnStartCamera.disabled = true;
                 this.ui.btnStartCamera.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cargando...';
+                if (this.ui.btnStartCameraMobile) {
+                    this.ui.btnStartCameraMobile.disabled = true;
+                    this.ui.btnStartCameraMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cargando...';
+                }
                 
                 await this.camera.startCamera();
                 this.recorder = new RecorderManager(this.camera.getStream());
@@ -96,11 +99,18 @@ class App {
                 alert("Error cámara: " + error.message);
                 this.ui.btnStartCamera.disabled = false;
                 this.ui.btnStartCamera.innerHTML = '<i class="fa-solid fa-video"></i> Iniciar Cámara';
+                if (this.ui.btnStartCameraMobile) {
+                    this.ui.btnStartCameraMobile.disabled = false;
+                    this.ui.btnStartCameraMobile.innerHTML = '<i class="fa-solid fa-video"></i> Iniciar Cámara';
+                }
             }
         };
         
         if (this.ui.btnStartCamera) {
             this.ui.btnStartCamera.addEventListener('click', startCamera);
+        }
+        if (this.ui.btnStartCameraMobile) {
+            this.ui.btnStartCameraMobile.addEventListener('click', startCamera);
         }
 
         // 2. Recording Flow (Toggle Pattern)
