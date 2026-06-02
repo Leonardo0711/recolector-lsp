@@ -462,8 +462,16 @@ export class UIController {
         // Setup Preview Player
         const url = URL.createObjectURL(videoBlob);
         this.previewPlayer.src = url;
+        this.previewPlayer.loop = true;
+        this.previewPlayer.muted = true;
+        this.previewPlayer.playsInline = true;
         this.previewPlayer.classList.remove('hidden');
         this.webcam.classList.add('hidden');
+        
+        // Play the video preview in a loop automatically
+        this.previewPlayer.play().catch(err => {
+            console.warn("Autoplay was prevented or failed:", err);
+        });
 
         // Show Review Overlay & Scientific Annotation
         this.reviewOverlay.classList.remove('hidden');
