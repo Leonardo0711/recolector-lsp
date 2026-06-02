@@ -213,8 +213,8 @@ export class UIController {
         this.wordSelect.innerHTML = '<option value="">-- Seleccionar --</option>';
         items.forEach(item => {
             const opt = document.createElement('option');
-            opt.value = item[idKey];
-            opt.textContent = item[textKey];
+            opt.value = item[idKey] || item.label_id || item.prompt_id || "";
+            opt.textContent = item[textKey] || item.label || item.prompt_text || "";
             this.wordSelect.appendChild(opt);
         });
         this.wordSelect.disabled = items.length === 0;
@@ -248,7 +248,8 @@ export class UIController {
         this.renderWordOptions(words, 'label_id', 'label');
         
         this.wordSelect.onchange = () => {
-            this.currentWord = words.find(v => v.label_id === this.wordSelect.value);
+            const val = this.wordSelect.value;
+            this.currentWord = words.find(v => (v.label_id || v.prompt_id || "") === val);
             this.updatePromptUI();
             this.loadRepetitionProgress();
             this.updateRepetitionUI();
@@ -260,7 +261,7 @@ export class UIController {
 
         this.wordSelect.onchange = () => {
             const promptId = this.wordSelect.value;
-            this.currentWord = items.find(i => i.prompt_id === promptId);
+            this.currentWord = items.find(i => (i.prompt_id || i.label_id || "") === promptId);
             this.updatePromptUI();
             this.loadRepetitionProgress();
             this.updateRepetitionUI();
@@ -299,7 +300,10 @@ export class UIController {
         this.currentRepetition = saved ? parseInt(saved) : 1;
         
         if (this.currentRepetition > 5) {
-             // Word fully recorded.
+             // Si el progreso quedó guardado con un número mayor a 5 (por el bug anterior),
+             // lo reiniciamos inmediatamente a 1 para destrabar el selector.
+             this.currentRepetition = 1;
+             this.saveRepetitionProgress();
         }
     }
 
@@ -528,13 +532,15 @@ export class UIController {
         this.uploadProgressBarMobile.style.width = '100%';
         
         this.currentRepetition++;
-        this.saveRepetitionProgress(); // Persist progress
         
         if (this.currentRepetition > 5) {
             this.currentRepetition = 1; 
+            this.saveRepetitionProgress(); // Persistir el reinicio a 1 en localStorage para destrabarlo
             this.wordSelect.value = "";
             this.currentWord = null;
             this.promptInstructions.classList.add('hidden');
+        } else {
+            this.saveRepetitionProgress(); // Persistir el progreso incremental normal
         }
         
         this.updateRepetitionUI();
