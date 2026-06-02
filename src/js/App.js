@@ -112,6 +112,25 @@ class App {
         if (this.ui.btnStartCameraMobile) {
             this.ui.btnStartCameraMobile.addEventListener('click', startCamera);
         }
+        if (this.ui.btnSwitchCamera) {
+            this.ui.btnSwitchCamera.addEventListener('click', async () => {
+                try {
+                    this.ui.btnSwitchCamera.disabled = true;
+                    const icon = this.ui.btnSwitchCamera.querySelector('i');
+                    if (icon) icon.classList.add('fa-spin');
+                    
+                    await this.camera.switchCamera();
+                    // Re-instantiate recorder with the new stream
+                    this.recorder = new RecorderManager(this.camera.getStream());
+                } catch (error) {
+                    alert("Error al cambiar de cámara: " + error.message);
+                } finally {
+                    this.ui.btnSwitchCamera.disabled = false;
+                    const icon = this.ui.btnSwitchCamera.querySelector('i');
+                    if (icon) icon.classList.remove('fa-spin');
+                }
+            });
+        }
 
         // 2. Recording Flow (Toggle Pattern)
         const toggleRecording = async () => {
@@ -123,6 +142,7 @@ class App {
                 // Block UI during countdown
                 this.ui.btnRecord.disabled = true;
                 this.ui.btnRecordMobile.disabled = true;
+                if (this.ui.btnSwitchCamera) this.ui.btnSwitchCamera.classList.add('hidden');
 
                 await this.ui.startCountdown();
 

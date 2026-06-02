@@ -2,21 +2,29 @@ export class CameraManager {
     constructor(videoElementId) {
         this.videoElement = document.getElementById(videoElementId);
         this.stream = null;
+        this.facingMode = "user"; // Default to front camera
     }
 
     async startCamera() {
         try {
-            // Pedir alta resolución y prioridad a la cámara frontal (o la web si existe)
+            // Pedir alta resolución y prioridad a la cámara seleccionada
             this.stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     width: { ideal: 1280, min: 640 },
                     height: { ideal: 720, min: 480 },
-                    facingMode: "user"
+                    facingMode: this.facingMode
                 },
                 audio: false
             });
 
             this.videoElement.srcObject = this.stream;
+
+            // Aplicar espejo únicamente para la cámara frontal (user)
+            if (this.facingMode === "user") {
+                this.videoElement.style.transform = "scaleX(-1)";
+            } else {
+                this.videoElement.style.transform = "scaleX(1)";
+            }
 
             // Retorna una promesa que se resuelve cuando el video tiene metadata (ancho/alto)
             return new Promise((resolve) => {
@@ -39,6 +47,12 @@ export class CameraManager {
             this.stream.getTracks().forEach(track => track.stop());
             this.videoElement.srcObject = null;
         }
+    }
+
+    async switchCamera() {
+        this.facingMode = this.facingMode === "user" ? "environment" : "user";
+        this.stopCamera();
+        return this.startCamera();
     }
 
     getStream() {

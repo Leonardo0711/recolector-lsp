@@ -46,6 +46,7 @@ export class UIController {
         this.btnRecord = document.getElementById('btnRecord');
         this.btnStop = document.getElementById('btnStop');
         this.btnRecordMobile = document.getElementById('btnRecordMobile');
+        this.btnSwitchCamera = document.getElementById('btnSwitchCamera');
         
         // --- Review & Annotation ---
         this.reviewOverlay = document.getElementById('reviewOverlay');
@@ -421,6 +422,7 @@ export class UIController {
         this.btnRecord.disabled = false;
         this.btnRecordMobile.disabled = false;
         this.btnRecordMobile.classList.remove('hidden');
+        if (this.btnSwitchCamera) this.btnSwitchCamera.classList.remove('hidden');
     }
 
     setRecordingState() {
@@ -434,6 +436,9 @@ export class UIController {
         // Mobile (Toggle text/icon)
         this.btnRecordMobile.innerHTML = '<i class="fa-solid fa-square"></i> Detener';
         this.btnRecordMobile.classList.replace('btn-record', 'btn-stop');
+        this.btnRecordMobile.disabled = false;
+
+        if (this.btnSwitchCamera) this.btnSwitchCamera.classList.add('hidden');
 
         this.recordingBadge.classList.remove('hidden');
         this.palabraOverlay.textContent = this.currentWord.label || "GRABANDO...";
@@ -459,6 +464,8 @@ export class UIController {
         this.btnRecordMobile.innerHTML = '<i class="fa-solid fa-circle"></i> Grabar';
         this.btnRecordMobile.classList.replace('btn-stop', 'btn-record');
         this.btnRecordMobile.classList.add('hidden');
+
+        if (this.btnSwitchCamera) this.btnSwitchCamera.classList.add('hidden');
 
         // Show tech stats
         this.statRes.innerHTML = `<i class="fa-solid fa-expand"></i> ${stats.width}x${stats.height}`;
@@ -501,6 +508,8 @@ export class UIController {
         // Restore record buttons
         this.btnRecord.disabled = false;
         this.btnRecordMobile.classList.remove('hidden');
+        this.btnRecordMobile.disabled = false;
+        if (this.btnSwitchCamera) this.btnSwitchCamera.classList.remove('hidden');
         this.wordSelect.disabled = false;
         this.categorySelect.disabled = false;
     }
