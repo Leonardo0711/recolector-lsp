@@ -37,6 +37,9 @@ export class DriveUploader {
             }
 
             const result = await response.json();
+            if (result.error) {
+                throw new Error(result.error.message || "Error interno de Google Apps Script");
+            }
             if (result.status === "error") {
                 throw new Error(result.message);
             }
