@@ -27,7 +27,7 @@ export class DriveUploader {
                 method: "POST",
                 mode: "cors", // Changed to cors to get response
                 headers: {
-                    "Content-Type": "application/json",
+                    "Content-Type": "text/plain",
                 },
                 body: JSON.stringify(payload)
             });

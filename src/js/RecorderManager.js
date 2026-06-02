@@ -13,10 +13,10 @@ export class RecorderManager {
         this.videoBlob = null;
         this.startTime = performance.now();
 
-        // Try getting WebM with codecs if possible
-        let options = { mimeType: 'video/webm;codecs=vp9,opus' };
+        // Try getting WebM with codecs if possible (video only)
+        let options = { mimeType: 'video/webm;codecs=vp9' };
         if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-            options = { mimeType: 'video/webm;codecs=vp8,opus' };
+            options = { mimeType: 'video/webm;codecs=vp8' };
             if (!MediaRecorder.isTypeSupported(options.mimeType)) {
                 options = { mimeType: 'video/webm' };
             }
