@@ -137,14 +137,14 @@ body {
 // =============================================
 // THEME TOGGLE SWITCH
 // =============================================
-.theme-toggle {
-  position: fixed;
+.landing-header {
+  position: absolute;
   top: 20px;
   right: 20px;
-  z-index: 100;
+  z-index: 10;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: flex-end;
 }
 
 .theme-switch {
@@ -307,6 +307,12 @@ body {
   align-items: center;
   gap: 14px;
   padding-bottom: 8px;
+  width: 100%;
+
+  .theme-switch {
+    margin-left: auto;
+    flex-shrink: 0;
+  }
 
   .brand-icon {
     width: 46px;
@@ -1545,7 +1551,7 @@ body {
 // =============================================
 @media (max-width: 640px) {
   .landing {
-    padding: 32px 16px;
+    padding: 80px 16px 32px 16px;
   }
 
   .landing-content {

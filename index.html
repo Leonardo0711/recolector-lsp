@@ -21,16 +21,14 @@
     <!-- Fondo animado -->
     <div class="animated-bg"></div>
 
-    <!-- Toggle Light/Dark -->
-    <div class="theme-toggle">
-        <button class="theme-switch" id="themeSwitch" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">
-            <span class="switch-stars"></span>
-            <span class="switch-knob"><i class="fa-solid fa-moon" id="themeIcon"></i></span>
-        </button>
-    </div>
-
     <!-- ==================== LANDING / HERO ==================== -->
     <section class="landing" id="landing">
+        <header class="landing-header">
+            <button class="theme-switch" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">
+                <span class="switch-stars"></span>
+                <span class="switch-knob"><i class="fa-solid fa-moon theme-icon"></i></span>
+            </button>
+        </header>
         <div class="landing-content">
             <div class="landing-badge">
                 <i class="fa-solid fa-flask"></i> Proyecto de Investigación — Universidad
@@ -113,6 +111,10 @@
                     <h1>DataCollect <span>LSP</span></h1>
                     <p class="brand-subtitle">Lenguaje de Señas Peruano</p>
                 </div>
+                <button class="theme-switch app-theme-switch" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">
+                    <span class="switch-stars"></span>
+                    <span class="switch-knob"><i class="fa-solid fa-moon theme-icon"></i></span>
+                </button>
             </div>
 
             <!-- Card: Formulario de Participante (Una vez por sesión) -->
