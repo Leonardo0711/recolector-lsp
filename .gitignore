@@ -4,3 +4,4 @@ dist/
 .sass-cache/
 .DS_Store
 export/
+google_apps_script_prod.js
