@@ -159,6 +159,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+  flex-shrink: 0;
 
   .switch-knob {
     position: absolute;
@@ -586,6 +587,17 @@ body {
     background: var(--primary);
     color: white;
     box-shadow: 0 6px 15px var(--primary-glow);
+  }
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--record), #ff6b81);
+  color: white !important;
+  box-shadow: 0 4px 15px var(--record-glow);
+
+  &:not(:disabled):hover {
+    background: var(--record-hover);
+    box-shadow: 0 6px 25px var(--record-glow);
   }
 }
 

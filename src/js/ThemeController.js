@@ -3,7 +3,6 @@
  */
 export class ThemeController {
     constructor() {
-        this.themeSwitches = document.querySelectorAll('.theme-switch');
         this.html = document.documentElement;
 
         // Load saved preference or default to dark
@@ -11,21 +10,22 @@ export class ThemeController {
         this.currentTheme = saved || 'dark';
         this.applyTheme(this.currentTheme, false);
 
-        // Bind toggle with safety check for all instances
-        this.themeSwitches.forEach(btn => {
-            btn.addEventListener('click', () => {
+        // Use event delegation to handle clicks on any .theme-switch, including dynamic ones
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.theme-switch');
+            if (btn) {
                 this.currentTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
                 this.applyTheme(this.currentTheme, true);
                 localStorage.setItem('lsp_theme', this.currentTheme);
-            });
+            }
         });
     }
 
     applyTheme(theme, animate) {
         this.html.setAttribute('data-theme', theme);
 
-        // Update all icons
-        this.themeSwitches.forEach(btn => {
+        // Update all icons dynamically in the document
+        document.querySelectorAll('.theme-switch').forEach(btn => {
             const icon = btn.querySelector('.theme-icon');
             if (icon) {
                 if (theme === 'light') {

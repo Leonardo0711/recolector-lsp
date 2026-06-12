@@ -233,6 +233,10 @@ export class AdminAnnotationManager {
 
                     <div class="db-user-actions">
                         <span class="user-alias"><i class="fa-solid fa-circle-user"></i> ${this.session.user.alias}</span>
+                        <button class="theme-switch db-theme-switch" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">
+                            <span class="switch-stars"></span>
+                            <span class="switch-knob"><i class="fa-solid ${(document.documentElement.getAttribute('data-theme') || 'dark') === 'light' ? 'fa-sun' : 'fa-moon'} theme-icon"></i></span>
+                        </button>
                         <button class="btn btn-secondary" id="btnBackToGrabador" title="Ir al grabador de participante">
                             <i class="fa-solid fa-video"></i> Capturar
                         </button>
