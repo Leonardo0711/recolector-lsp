@@ -15,6 +15,21 @@ export class AdminAnnotationManager {
     }
 
     /**
+     * Convierte un enlace de Google Drive en un enlace de descarga directa/streaming
+     */
+    getDirectVideoUrl(url) {
+        if (!url) return "";
+        if (url.startsWith("blob:") || url.includes("localhost") || (!url.includes("drive.google.com") && !url.includes("docs.google.com"))) {
+            return url;
+        }
+        const matches = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+        if (matches && matches[1]) {
+            return `https://docs.google.com/uc?export=download&id=${matches[1]}`;
+        }
+        return url;
+    }
+
+    /**
      * Inicializa el gestor, recuperando sesión si existe
      */
     init() {
@@ -387,6 +402,7 @@ export class AdminAnnotationManager {
                 (s.label || "").toLowerCase().includes(searchTerm) ||
                 (s.sample_id || "").toLowerCase().includes(searchTerm) ||
                 (s.participant_id || "").toLowerCase().includes(searchTerm) ||
+                (s.participant_alias || "").toLowerCase().includes(searchTerm) ||
                 (s.capture_mode || "").toLowerCase().includes(searchTerm)
             );
         });
@@ -421,7 +437,7 @@ export class AdminAnnotationManager {
                         <p class="sample-prompt-preview">${s.prompt_text || ""}</p>
                     </div>
                     <div class="card-bottom">
-                        <span><i class="fa-solid fa-user"></i> ${s.participant_id}</span>
+                        <span><i class="fa-solid fa-user"></i> ${s.participant_alias || s.participant_id}</span>
                         <span><i class="fa-solid fa-clock"></i> ${duration}</span>
                         <span><i class="fa-solid fa-calendar"></i> ${dateStr}</span>
                     </div>
@@ -488,6 +504,7 @@ export class AdminAnnotationManager {
         const tipoMuestra = ann.tipo_muestra || sample.capture_mode;
         const glosaFinal = ann.glosa_final || sample.label || "";
         const secuenciaGlosas = ann.secuencia_glosas || "";
+        const segmentacionGlosas = ann.segmentacion_glosas || "";
         const textoEsFinal = ann.texto_es_final || sample.produced_text_es || "";
         const intencion = ann.intencion_comunicativa || "saludo";
         const aceptabilidad = ann.aceptabilidad_linguistica || "aceptable";
@@ -519,7 +536,7 @@ export class AdminAnnotationManager {
                     <!-- Sección Izquierda: Video y Metadatos de Captura -->
                     <div class="grid-col-video">
                         <div class="video-preview-wrapper">
-                            <video src="${sample.video_url}" controls class="detail-video"></video>
+                            <video src="${this.getDirectVideoUrl(sample.video_url)}" controls class="detail-video"></video>
                         </div>
 
                         <!-- Ficha Técnica de Captura -->
@@ -528,7 +545,7 @@ export class AdminAnnotationManager {
                             <div class="spec-table">
                                 <div class="spec-row"><span>Vocabulario:</span><strong>${sample.label}</strong></div>
                                 <div class="spec-row"><span>Texto Guía:</span><strong>${sample.prompt_text || "--"}</strong></div>
-                                <div class="spec-row"><span>Participante:</span><strong>${sample.participant_id}</strong></div>
+                                <div class="spec-row"><span>Participante:</span><strong>${sample.participant_alias || "Desconocido"} (${sample.participant_id})</strong></div>
                                 <div class="spec-row"><span>Resolución:</span><strong>${sample.width ? `${sample.width}x${sample.height}` : "No registrada"}</strong></div>
                                 <div class="spec-row"><span>Duración:</span><strong>${parseFloat(sample.duration_sec || 0).toFixed(2)}s</strong></div>
                                 <div class="spec-row"><span>Repetición:</span><strong>#${sample.repetition || "1"}</strong></div>
@@ -560,6 +577,11 @@ export class AdminAnnotationManager {
                             <div id="secuenciaGlosasContainer" class="form-field ${isIsolated ? 'hidden' : ''}">
                                 <label for="annSecuenciaGlosas">Secuencia de Glosas (Obligatorio en Continuas)</label>
                                 <input type="text" id="annSecuenciaGlosas" placeholder="Ej: YO COMPRAR MANZANA TRES" value="${secuenciaGlosas}">
+                            </div>
+
+                            <div id="segmentacionGlosasContainer" class="form-field ${isIsolated ? 'hidden' : ''}">
+                                <label for="annSegmentacionGlosas">Segmentación Temporal / Tiempos (Inicio-Fin)</label>
+                                <input type="text" id="annSegmentacionGlosas" placeholder="Ej: YO (0.2-0.8), COMPRAR (1.0-1.7), MANZANA (2.0-2.8)" value="${segmentacionGlosas}">
                             </div>
 
                             <div class="form-field">
@@ -707,12 +729,15 @@ export class AdminAnnotationManager {
         // Alternar campos condicionales
         selectTipo.addEventListener("change", (e) => {
             const val = e.target.value;
+            const containerSegmentacion = document.getElementById("segmentacionGlosasContainer");
             if (val === "aislada" || val === "expresion") {
                 containerGlosa.classList.remove("hidden");
                 containerSecuencia.classList.add("hidden");
+                if (containerSegmentacion) containerSegmentacion.classList.add("hidden");
             } else {
                 containerGlosa.classList.add("hidden");
                 containerSecuencia.classList.remove("hidden");
+                if (containerSegmentacion) containerSegmentacion.classList.remove("hidden");
             }
         });
 
@@ -890,6 +915,7 @@ export class AdminAnnotationManager {
         const tipo = document.getElementById("annTipo").value;
         const glosaFinal = document.getElementById("annGlosaFinal").value.trim();
         const secuencia = document.getElementById("annSecuenciaGlosas").value.trim();
+        const segmentacion = document.getElementById("annSegmentacionGlosas") ? document.getElementById("annSegmentacionGlosas").value.trim() : "";
         const textoEs = document.getElementById("annTextoEsFinal").value.trim();
         const intencion = document.getElementById("annIntencion").value;
         const aceptabilidad = document.getElementById("annAceptabilidad").value;
@@ -922,6 +948,7 @@ export class AdminAnnotationManager {
             tipo_muestra: tipo,
             glosa_final: tipo === "aislada" || tipo === "expresion" ? glosaFinal : "",
             secuencia_glosas: tipo === "plantilla" || tipo === "continua" ? secuencia : "",
+            segmentacion_glosas: tipo === "plantilla" || tipo === "continua" ? segmentacion : "",
             texto_es_final: textoEs,
             intencion_comunicativa: intencion,
             aceptabilidad_linguistica: aceptabilidad,

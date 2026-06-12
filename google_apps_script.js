@@ -144,7 +144,8 @@ function doPost(e) {
     if (action === "listPendingSamples") {
       assertRole(email, accessCode, ["annotator", "admin"]);
       const samplesSheet = ss.getSheetByName("samples");
-      const samples = sheetToObjects(samplesSheet);
+      let samples = sheetToObjects(samplesSheet);
+      samples = enrichSamplesWithParticipantAlias(ss, samples);
       const filtered = samples.filter(s => {
         const status = (s.annotation_status || "").toString().trim().toLowerCase();
         return status === "" || status === "pendiente" || status === "self_annotated";
@@ -156,7 +157,8 @@ function doPost(e) {
     if (action === "listAnnotatedSamples") {
       assertRole(email, accessCode, ["annotator", "admin"]);
       const samplesSheet = ss.getSheetByName("samples");
-      const samples = sheetToObjects(samplesSheet);
+      let samples = sheetToObjects(samplesSheet);
+      samples = enrichSamplesWithParticipantAlias(ss, samples);
       const filtered = samples.filter(s => {
         const status = (s.annotation_status || "").toString().trim().toLowerCase();
         return status === "anotado" || status === "requiere_revision";
@@ -168,7 +170,8 @@ function doPost(e) {
     if (action === "listValidatedSamples") {
       assertRole(email, accessCode, ["admin"]);
       const samplesSheet = ss.getSheetByName("samples");
-      const samples = sheetToObjects(samplesSheet);
+      let samples = sheetToObjects(samplesSheet);
+      samples = enrichSamplesWithParticipantAlias(ss, samples);
       const filtered = samples.filter(s => {
         const status = (s.annotation_status || "").toString().trim().toLowerCase();
         return status === "validado" || status === "rechazado";
@@ -186,6 +189,15 @@ function doPost(e) {
       const samples = sheetToObjects(samplesSheet);
       const sample = samples.find(s => s.sample_id === sampleId);
       if (!sample) return errorResponse("Muestra no encontrada.");
+      
+      const participantsSheet = ss.getSheetByName("participants");
+      if (participantsSheet) {
+        const participants = sheetToObjects(participantsSheet);
+        const participant = participants.find(p => p.participant_id === sample.participant_id);
+        if (participant) {
+          sample.participant_alias = participant.alias || "";
+        }
+      }
       
       const annotationsSheet = ss.getSheetByName("annotations");
       const annotations = sheetToObjects(annotationsSheet);
@@ -276,6 +288,7 @@ function doPost(e) {
               tipo_muestra: ann.tipo_muestra || "",
               glosa_final: ann.glosa_final || "",
               secuencia_glosas: ann.secuencia_glosas || "",
+              segmentacion_glosas: ann.segmentacion_glosas || "",
               texto_es_final: ann.texto_es_final || "",
               intencion_comunicativa: ann.intencion_comunicativa || "",
               aceptabilidad_linguistica: ann.aceptabilidad_linguistica || "",
@@ -795,7 +808,7 @@ function initDatabase() {
   const userHeaders = ["user_id", "email", "alias", "role", "status", "created_at", "last_login", "access_code"];
   const annotationHeaders = [
     "annotation_id", "sample_id", "annotator_id", "annotation_datetime", "tipo_muestra", 
-    "glosa_final", "secuencia_glosas", "texto_es_final", "intencion_comunicativa", 
+    "glosa_final", "secuencia_glosas", "segmentacion_glosas", "texto_es_final", "intencion_comunicativa", 
     "aceptabilidad_linguistica", "calidad_visual", "estado_anotacion", "motivo_rechazo", 
     "observacion", "admin_notes", "reviewed_by", "review_datetime"
   ];
@@ -813,24 +826,16 @@ function initDatabase() {
   ];
 
   const usersSheet = getOrCreateSheet(ss, "users");
-  if (usersSheet.getLastRow() === 0) {
-    usersSheet.appendRow(userHeaders);
-  }
+  syncHeaders(usersSheet, userHeaders);
   
   const annotationsSheet = getOrCreateSheet(ss, "annotations");
-  if (annotationsSheet.getLastRow() === 0) {
-    annotationsSheet.appendRow(annotationHeaders);
-  }
+  syncHeaders(annotationsSheet, annotationHeaders);
   
   const auditSheet = getOrCreateSheet(ss, "annotation_audit");
-  if (auditSheet.getLastRow() === 0) {
-    auditSheet.appendRow(auditHeaders);
-  }
+  syncHeaders(auditSheet, auditHeaders);
 
   const samplesSheet = getOrCreateSheet(ss, "samples");
-  if (samplesSheet.getLastRow() === 0) {
-    samplesSheet.appendRow(samplesHeaders);
-  }
+  syncHeaders(samplesSheet, samplesHeaders);
 
   const users = sheetToObjects(usersSheet);
   const hasAdmin = users.some(u => u.role === "admin" && u.status === "active");
@@ -990,6 +995,45 @@ function upsertRow(sheet, keyColumnName, keyValue, dataObject) {
     const newRow = headers.map(h => dataObject[h] !== undefined ? dataObject[h] : "");
     sheet.appendRow(newRow);
   }
+}
+
+/**
+ * Asegura que todas las columnas esperadas existan en la cabecera de la hoja
+ */
+function syncHeaders(sheet, expectedHeaders) {
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(expectedHeaders);
+    return;
+  }
+  const lastCol = sheet.getLastColumn();
+  if (lastCol === 0) {
+    sheet.appendRow(expectedHeaders);
+    return;
+  }
+  const headersRange = sheet.getRange(1, 1, 1, lastCol);
+  const actualHeaders = headersRange.getValues()[0].map(h => h.toString().trim());
+  const missingHeaders = expectedHeaders.filter(h => !actualHeaders.includes(h));
+  if (missingHeaders.length > 0) {
+    const newHeaders = [...actualHeaders, ...missingHeaders];
+    sheet.getRange(1, 1, 1, newHeaders.length).setValues([newHeaders]);
+  }
+}
+
+/**
+ * Enriquece los objetos de muestra con el alias del participante
+ */
+function enrichSamplesWithParticipantAlias(ss, samples) {
+  const participantsSheet = ss.getSheetByName("participants");
+  if (!participantsSheet) return samples;
+  const participants = sheetToObjects(participantsSheet);
+  const partMap = {};
+  participants.forEach(p => {
+    partMap[p.participant_id] = p.alias || "";
+  });
+  samples.forEach(s => {
+    s.participant_alias = partMap[s.participant_id] || "";
+  });
+  return samples;
 }
 
 /**
