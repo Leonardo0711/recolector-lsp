@@ -1,10 +1,11 @@
-/**
- * RECOLECTOR DE LENGUAJE DE SEÑAS PERUANO - v4.1 (Fase II)
- * Backend con Gestión de Roles, Anotación y Auditoría
- */
+// Obtener IDs desde las propiedades del script (para seguridad en GitHub)
+function getFolderIdBase() {
+  return PropertiesService.getScriptProperties().getProperty("FOLDER_ID_BASE") || "ID_DE_CARPETA_DRIVE_AQUI";
+}
 
-const FOLDER_ID_BASE = "1rVJ8be1hyC1uqGyUQui6frCJgdn9CxUG"; // ID de la carpeta 'dataset'
-const SPREADSHEET_ID = "1q8Tp1pDgD3Rs487-yfSqiwiMe9qA3pU7dhIwo0tNHbA"; // ID de la hoja de cálculo para el índice
+function getSpreadsheetId() {
+  return PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID") || "ID_DE_SPREADSHEET_AQUI";
+}
 
 /**
  * Maneja peticiones de lectura (GET) - Reservado solo para healthCheck/ping
@@ -56,7 +57,7 @@ function doPost(e) {
           const year = now.getFullYear().toString();
           const month = (now.getMonth() + 1).toString().padStart(2, '0');
 
-          const baseFolder = DriveApp.getFolderById(FOLDER_ID_BASE);
+          const baseFolder = DriveApp.getFolderById(getFolderIdBase());
           const rawFolder = getOrCreateSubFolder(baseFolder, "raw");
           const modeFolder = getOrCreateSubFolder(rawFolder, mode);
           
@@ -113,7 +114,7 @@ function doPost(e) {
     const email = payload.email;
     const accessCode = payload.access_code;
     
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const ss = SpreadsheetApp.openById(getSpreadsheetId());
     
     // ACCIÓN SENSIBLE: Login
     if (action === "login") {
@@ -768,7 +769,7 @@ function generateSampleId() {
  * Actualiza hojas maestras de participante y muestra
  */
 function updateMasterSheets(m) {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = SpreadsheetApp.openById(getSpreadsheetId());
   
   const samplesSheet = getOrCreateSheet(ss, "samples");
   const sampleHeaders = [
@@ -803,7 +804,7 @@ function updateMasterSheets(m) {
  * Inicialización segura y bootstrap de administrador
  */
 function initDatabase() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = SpreadsheetApp.openById(getSpreadsheetId());
   
   const userHeaders = ["user_id", "email", "alias", "role", "status", "created_at", "last_login", "access_code"];
   const annotationHeaders = [
@@ -870,7 +871,7 @@ function assertRole(email, accessCode, allowedRoles) {
     throw new Error("Faltan credenciales (email o código de acceso) en la solicitud.");
   }
   
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = SpreadsheetApp.openById(getSpreadsheetId());
   const usersSheet = ss.getSheetByName("users");
   if (!usersSheet) {
     throw new Error("Base de datos de usuarios no inicializada.");
@@ -902,7 +903,7 @@ function assertRole(email, accessCode, allowedRoles) {
  * Bitácora de cambios para auditorías
  */
 function logAudit(sampleId, annotationId, userId, action, oldStatus, newStatus, notes) {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = SpreadsheetApp.openById(getSpreadsheetId());
   const auditSheet = ss.getSheetByName("annotation_audit");
   if (!auditSheet) return;
   
