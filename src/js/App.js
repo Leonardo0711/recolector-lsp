@@ -4,6 +4,7 @@ import { UIController } from "./UIController.js";
 import { DriveUploader } from "./DriveUploader.js";
 import { ThemeController } from "./ThemeController.js";
 import TourManager from "./TourManager.js";
+import { AdminAnnotationManager } from "./AdminAnnotationManager.js";
 
 // Initialize global theme
 const themeCtrl = new ThemeController();
@@ -39,6 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnStartTour) {
         btnStartTour.addEventListener('click', () => TourManager.startTour());
     }
+
+    // Inicializar el panel de administración/anotación
+    const adminManager = new AdminAnnotationManager();
+    adminManager.init();
+    window.adminInstance = adminManager;
 
     window.appInstance = new App();
 });

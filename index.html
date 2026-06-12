@@ -24,6 +24,9 @@
     <!-- ==================== LANDING / HERO ==================== -->
     <section class="landing" id="landing">
         <header class="landing-header">
+            <button class="btn btn-secondary btn-admin-trigger" id="btnAdminPanel" title="Panel de Administración y Anotación">
+                <i class="fa-solid fa-user-shield"></i> Panel Admin
+            </button>
             <button class="theme-switch" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">
                 <span class="switch-stars"></span>
                 <span class="switch-knob"><i class="fa-solid fa-moon theme-icon"></i></span>
@@ -331,6 +334,11 @@
                 <i class="fa-solid fa-circle-play"></i> Ver Tutorial
             </button>
 
+            <!-- Admin Button -->
+            <button class="btn-back" id="btnAdminPanelSidebar" style="margin-bottom: 8px;">
+                <i class="fa-solid fa-user-shield"></i> Panel Admin
+            </button>
+
             <!-- Back to landing -->
             <button class="btn-back" id="btnBackToLanding">
                 <i class="fa-solid fa-arrow-left"></i> Volver al inicio
@@ -427,6 +435,9 @@
         </section>
 
     </main>
+
+    <!-- ==================== DASHBOARD DE ADMINISTRACIÓN Y ANOTACIÓN ==================== -->
+    <div id="dashboardContainer" class="dashboard-container hidden"></div>
 
     <!-- Lógica de Negocios (ES Modules) -->
     <script type="module" src="./src/js/App.js"></script>
