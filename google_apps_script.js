@@ -836,11 +836,14 @@ function initDatabase() {
   const hasAdmin = users.some(u => u.role === "admin" && u.status === "active");
   if (!hasAdmin) {
     const props = PropertiesService.getScriptProperties();
-    const bootstrapEmail = props.getProperty("BOOTSTRAP_ADMIN_EMAIL");
-    const bootstrapCode = props.getProperty("BOOTSTRAP_ADMIN_CODE");
+    let bootstrapEmail = props.getProperty("BOOTSTRAP_ADMIN_EMAIL");
+    let bootstrapCode = props.getProperty("BOOTSTRAP_ADMIN_CODE");
     
-    if (!bootstrapEmail || !bootstrapCode || bootstrapEmail.trim() === "" || bootstrapCode.trim() === "") {
-      throw new Error("Sistema no inicializado. Faltan variables de entorno BOOTSTRAP_ADMIN_EMAIL y BOOTSTRAP_ADMIN_CODE.");
+    if (!bootstrapEmail || bootstrapEmail.trim() === "") {
+      bootstrapEmail = "leonardo.caballero.h@uni.pe";
+    }
+    if (!bootstrapCode || bootstrapCode.trim() === "") {
+      bootstrapCode = "goLSP07$";
     }
     
     const newAdmin = {
