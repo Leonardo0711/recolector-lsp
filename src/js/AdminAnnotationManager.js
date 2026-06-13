@@ -30,6 +30,21 @@ export class AdminAnnotationManager {
     }
 
     /**
+     * Convierte un enlace de Google Drive en un enlace de reproducción embebido (iframe)
+     */
+    getEmbedVideoUrl(url) {
+        if (!url) return "";
+        if (url.startsWith("blob:") || url.includes("localhost") || (!url.includes("drive.google.com") && !url.includes("docs.google.com"))) {
+            return "";
+        }
+        const matches = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+        if (matches && matches[1]) {
+            return `https://drive.google.com/file/d/${matches[1]}/preview`;
+        }
+        return "";
+    }
+
+    /**
      * Inicializa el gestor, recuperando sesión si existe
      */
     init() {
@@ -511,6 +526,11 @@ export class AdminAnnotationManager {
 
         const statusClass = `status-${(sample.annotation_status || "pendiente").trim().toLowerCase()}`;
 
+        const embedUrl = this.getEmbedVideoUrl(sample.video_url);
+        const videoElementHtml = embedUrl
+            ? `<iframe src="${embedUrl}" class="detail-video" allow="autoplay" style="border: none;"></iframe>`
+            : `<video src="${sample.video_url}" controls class="detail-video"></video>`;
+
         detailPanel.innerHTML = `
             <div class="sample-detail-container ${statusClass}">
                 <!-- Cabecera de Muestra -->
@@ -531,7 +551,7 @@ export class AdminAnnotationManager {
                     <!-- Sección Izquierda: Video y Metadatos de Captura -->
                     <div class="grid-col-video">
                         <div class="video-preview-wrapper">
-                            <video src="${this.getDirectVideoUrl(sample.video_url)}" controls class="detail-video"></video>
+                            ${videoElementHtml}
                         </div>
 
                         <!-- Ficha Técnica de Captura -->
