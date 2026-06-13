@@ -8,7 +8,7 @@ export class AdminAnnotationManager {
         this.gasUrl = import.meta.env.VITE_GAS_URL;
         this.container = document.getElementById("dashboardContainer");
         this.session = null;
-        this.currentTab = "pending"; // pending, annotated, validated, users, export
+        this.currentTab = "summary"; // summary, pending, annotated, validated, users, export
         this.samples = [];
         this.selectedSample = null;
         this.isLoading = false;
@@ -249,6 +249,9 @@ export class AdminAnnotationManager {
                     </div>
                     
                     <nav class="db-nav">
+                        <button class="nav-tab ${this.currentTab === 'summary' ? 'active' : ''}" data-tab="summary">
+                            <i class="fa-solid fa-chart-simple"></i> Resumen
+                        </button>
                         <button class="nav-tab ${this.currentTab === 'pending' ? 'active' : ''}" data-tab="pending">
                             <i class="fa-solid fa-clock"></i> Pendientes
                         </button>
@@ -324,6 +327,11 @@ export class AdminAnnotationManager {
     async loadTabContent() {
         const body = document.getElementById("dashboardBody");
         if (!body) return;
+
+        if (this.currentTab === "summary") {
+            this.renderSummaryTab(body);
+            return;
+        }
 
         if (this.currentTab === "users") {
             this.renderUsersTab(body);
@@ -1334,5 +1342,268 @@ export class AdminAnnotationManager {
                 btnExport.innerHTML = `<i class="fa-solid fa-download"></i> Generar y Descargar JSON`;
             }
         });
+    }
+
+    /**
+     * Pestaña de Resumen Estadístico (Dashboard)
+     */
+    async renderSummaryTab(body) {
+        body.innerHTML = `
+            <div class="summary-dashboard">
+                <div class="loading-state">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Cargando resumen estadístico...
+                </div>
+            </div>
+        `;
+
+        try {
+            let summary;
+            let isUsingMockData = false;
+
+            try {
+                const res = await this.apiPost("getSummary");
+                summary = res.summary || {
+                    total: 0,
+                    status: { pendiente: 0, anotado: 0, validado: 0, requiere_revision: 0, rechazado: 0 },
+                    splits: { train: 0, val: 0, test: 0, holdout: 0, unassigned: 0 },
+                    modes: { isolated: 0, expression: 0, template: 0, continuous: 0 },
+                    labels: {}
+                };
+            } catch (err) {
+                console.warn("Error al llamar a getSummary backend, usando datos mock locales:", err);
+                isUsingMockData = true;
+                summary = {
+                    total: 125,
+                    status: { pendiente: 42, anotado: 35, validado: 38, requiere_revision: 5, rechazado: 5 },
+                    splits: { train: 75, val: 20, test: 20, holdout: 10, unassigned: 0 },
+                    modes: { isolated: 50, expression: 25, template: 30, continuous: 20 },
+                    labels: {
+                        "mañana": { total: 12, pendiente: 3, anotado: 4, validado: 5, requiere_revision: 0, rechazado: 0 },
+                        "hola": { total: 15, pendiente: 2, anotado: 5, validado: 8, requiere_revision: 0, rechazado: 0 },
+                        "gracias": { total: 10, pendiente: 4, anotado: 2, validado: 3, requiere_revision: 1, rechazado: 0 },
+                        "por favor": { total: 8, pendiente: 1, anotado: 3, validado: 4, requiere_revision: 0, rechazado: 0 },
+                        "adiós": { total: 9, pendiente: 3, anotado: 2, validado: 3, requiere_revision: 0, rechazado: 1 },
+                        "perdón": { total: 6, pendiente: 2, anotado: 2, validado: 2, requiere_revision: 0, rechazado: 0 },
+                        "ayuda": { total: 11, pendiente: 5, anotado: 3, validado: 3, requiere_revision: 0, rechazado: 0 },
+                        "bien": { total: 14, pendiente: 4, anotado: 4, validado: 5, requiere_revision: 0, rechazado: 1 },
+                        "mal": { total: 7, pendiente: 2, anotado: 1, validado: 3, requiere_revision: 1, rechazado: 0 },
+                        "sí": { total: 18, pendiente: 8, anotado: 4, validado: 5, requiere_revision: 1, rechazado: 0 },
+                        "no": { total: 15, pendiente: 5, anotado: 5, validado: 5, requiere_revision: 0, rechazado: 0 }
+                    }
+                };
+            }
+
+            const status = summary.status || {};
+            const splits = summary.splits || {};
+            const modes = summary.modes || {};
+            const labels = summary.labels || {};
+
+            body.innerHTML = `
+                <div class="summary-dashboard">
+                    ${isUsingMockData ? `
+                    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: var(--warning); padding: 12px 16px; border-radius: var(--radius-md); margin-bottom: 20px; display: flex; align-items: center; gap: 12px; font-size: 0.88rem;">
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.2rem;"></i>
+                        <span><strong>Modo de Demostración:</strong> Se están mostrando datos locales de prueba porque la acción de Apps Script no está disponible en la web app actual. Actualice el script de Google Apps Script para ver sus datos reales.</span>
+                    </div>
+                    ` : ''}
+                    
+                    <!-- KPIs Grid -->
+                    <div class="summary-kpis-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-icon"><i class="fa-solid fa-database"></i></div>
+                            <div class="kpi-info">
+                                <h3>Total Muestras</h3>
+                                <p class="kpi-value">${summary.total || 0}</p>
+                            </div>
+                        </div>
+                        <div class="kpi-card status-pendiente">
+                            <div class="kpi-icon"><i class="fa-solid fa-clock"></i></div>
+                            <div class="kpi-info">
+                                <h3>Pendientes</h3>
+                                <p class="kpi-value">${(status.pendiente || 0)}</p>
+                            </div>
+                        </div>
+                        <div class="kpi-card status-anotado">
+                            <div class="kpi-icon"><i class="fa-solid fa-clipboard-check"></i></div>
+                            <div class="kpi-info">
+                                <h3>Anotadas</h3>
+                                <p class="kpi-value">${(status.anotado || 0)}</p>
+                            </div>
+                        </div>
+                        <div class="kpi-card status-validado">
+                            <div class="kpi-icon"><i class="fa-solid fa-circle-check"></i></div>
+                            <div class="kpi-info">
+                                <h3>Validadas</h3>
+                                <p class="kpi-value">${(status.validado || 0)}</p>
+                            </div>
+                        </div>
+                        <div class="kpi-card status-rechazado">
+                            <div class="kpi-icon"><i class="fa-solid fa-ban"></i></div>
+                            <div class="kpi-info">
+                                <h3>Rechazadas</h3>
+                                <p class="kpi-value">${(status.rechazado || 0)}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Details Grid -->
+                    <div class="summary-details-grid">
+                        <!-- Columna Izquierda: Vocabulario -->
+                        <div class="summary-card glass">
+                            <div class="card-header">
+                                <h3><i class="fa-solid fa-book-atlas"></i> Estadísticas por Palabra (Vocabulario)</h3>
+                                <div class="search-filter-container mini">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    <input type="text" id="labelStatsSearch" placeholder="Buscar palabra...">
+                                </div>
+                            </div>
+                            <div class="labels-list-scroll" id="labelsStatsList">
+                                <!-- Se llena dinámicamente -->
+                            </div>
+                        </div>
+
+                        <!-- Columna Derecha: Splits y Modos -->
+                        <div class="summary-card glass" id="extraStatsPanel">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Renderizar la lista de vocabulario
+            this.renderLabelsListStats(labels);
+
+            // Escuchar buscador
+            const searchInput = document.getElementById("labelStatsSearch");
+            if (searchInput) {
+                searchInput.addEventListener("input", (e) => {
+                    const term = e.target.value.toLowerCase().trim();
+                    this.renderLabelsListStats(labels, term);
+                });
+            }
+
+            // Renderizar splits y modos
+            this.renderExtraStats(splits, modes, summary.total || 0);
+
+        } catch (e) {
+            body.innerHTML = `
+                <div class="summary-dashboard">
+                    <div class="error-state">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <p>Error al cargar el resumen estadístico: ${e.message || "Error desconocido"}</p>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    /**
+     * Renderiza la lista filtrable de palabras del vocabulario con barras de progreso relativas
+     */
+    renderLabelsListStats(labelsMap, searchTerm = "") {
+        const listDiv = document.getElementById("labelsStatsList");
+        if (!listDiv) return;
+
+        const entries = Object.entries(labelsMap)
+            .map(([word, stats]) => ({ word, ...stats }))
+            .filter(item => !searchTerm || item.word.toLowerCase().includes(searchTerm));
+
+        if (entries.length === 0) {
+            listDiv.innerHTML = `
+                <div class="empty-state-small" style="padding: 20px; text-align: center; color: var(--text-muted);">
+                    <i class="fa-solid fa-folder-open" style="font-size: 1.5rem; margin-bottom: 8px;"></i>
+                    <p>No se encontraron palabras.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Ordenar alfabéticamente
+        entries.sort((a, b) => a.word.localeCompare(b.word));
+
+        // Encontrar valor máximo para la escala relativa
+        const maxVal = Math.max(...entries.map(item => item.total), 1);
+
+        listDiv.innerHTML = entries.map(item => {
+            const widthPct = ((item.total / maxVal) * 100).toFixed(1);
+            
+            // Construir desglose de estados
+            const details = [];
+            if (item.validado > 0) details.push(`<span style="color: var(--success); font-weight: 500;"><i class="fa-solid fa-circle-check"></i> ${item.validado} val.</span>`);
+            if (item.anotado > 0) details.push(`<span style="color: var(--primary); font-weight: 500;"><i class="fa-solid fa-clipboard-check"></i> ${item.anotado} anot.</span>`);
+            if (item.pendiente > 0) details.push(`<span style="color: var(--warning); font-weight: 500;"><i class="fa-solid fa-clock"></i> ${item.pendiente} pend.</span>`);
+            if (item.requiere_revision > 0) details.push(`<span style="color: #f97316; font-weight: 500;"><i class="fa-solid fa-triangle-exclamation"></i> ${item.requiere_revision} rev.</span>`);
+            if (item.rechazado > 0) details.push(`<span style="color: #e11d48; font-weight: 500;"><i class="fa-solid fa-ban"></i> ${item.rechazado} rech.</span>`);
+
+            const detailsStr = details.length > 0 ? details.join(" • ") : "Sin estados";
+
+            return `
+                <div class="stats-row">
+                    <div class="stats-row-header">
+                        <span class="label-name">${item.word}</span>
+                        <span class="label-count"><strong>${item.total}</strong> en total</span>
+                    </div>
+                    <div class="stats-progress">
+                        <div class="progress-bar-fill" style="width: ${widthPct}%; background: linear-gradient(90deg, var(--primary) 0%, var(--cyan) 100%);"></div>
+                    </div>
+                    <div class="stats-row-details" style="display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.76rem; color: var(--text-secondary); margin-top: 2px;">
+                        ${detailsStr}
+                    </div>
+                </div>
+            `;
+        }).join("");
+    }
+
+    /**
+     * Renderiza las barras de progreso de splits y modos
+     */
+    renderExtraStats(splitsMap, modesMap, totalCount) {
+        const extraDiv = document.getElementById("extraStatsPanel");
+        if (!extraDiv) return;
+
+        const total = totalCount || 1;
+
+        const splitsData = [
+            { key: "train", label: "Entrenamiento (Train)", count: splitsMap.train || 0, colorClass: "split-train-bg" },
+            { key: "val", label: "Validación (Val)", count: splitsMap.val || 0, colorClass: "split-val-bg" },
+            { key: "test", label: "Prueba (Test)", count: splitsMap.test || 0, colorClass: "split-test-bg" },
+            { key: "holdout", label: "Holdout", count: splitsMap.holdout || 0, colorClass: "split-holdout-bg" },
+            { key: "unassigned", label: "Sin Asignar", count: splitsMap.unassigned || 0, colorClass: "split-unassigned-bg" }
+        ];
+
+        const modesData = [
+            { key: "isolated", label: "Aislada (Léxico)", count: modesMap.isolated || 0, colorClass: "isolated-bg" },
+            { key: "expression", label: "Expresión Fija", count: modesMap.expression || 0, colorClass: "expression-bg" },
+            { key: "template", label: "Plantilla Gramatical", count: modesMap.template || 0, colorClass: "plantilla-bg" },
+            { key: "continuous", label: "Señas Continuas", count: modesMap.continuous || 0, colorClass: "continua-bg" }
+        ];
+
+        const renderSection = (title, icon, items) => {
+            return `
+                <div class="stats-section" style="margin-bottom: 28px;">
+                    <h3><i class="${icon}"></i> ${title}</h3>
+                    ${items.map(item => {
+                        const pct = ((item.count / total) * 100).toFixed(1);
+                        return `
+                            <div class="stats-row" style="margin-bottom: 14px;">
+                                <div class="stats-row-header">
+                                    <span class="label-name">${item.label}</span>
+                                    <span class="label-count"><strong>${item.count}</strong> (${pct}%)</span>
+                                </div>
+                                <div class="stats-progress">
+                                    <div class="progress-bar-fill ${item.colorClass}" style="width: ${pct}%;"></div>
+                                </div>
+                            </div>
+                        `;
+                    }).join("")}
+                </div>
+            `;
+        };
+
+        extraDiv.innerHTML = `
+            ${renderSection("Distribución de Dataset (Splits)", "fa-solid fa-chart-pie", splitsData)}
+            <div style="height: 1px; background: var(--bg-card-border); margin: 20px 0;"></div>
+            ${renderSection("Formatos de Captura (Modos)", "fa-solid fa-clapperboard", modesData)}
+        `;
     }
 }

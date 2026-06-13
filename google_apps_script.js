@@ -688,6 +688,85 @@ function doPost(e) {
       }
     }
     
+    // ACCIÓN PROTEGIDA: Obtener resumen estadístico (Anotador / Admin)
+    if (action === "getSummary") {
+      assertRole(email, accessCode, ["annotator", "admin"]);
+      const samplesSheet = ss.getSheetByName("samples");
+      const samples = sheetToObjects(samplesSheet);
+      
+      const summary = {
+        total: 0,
+        status: {
+          pendiente: 0,
+          anotado: 0,
+          validado: 0,
+          requiere_revision: 0,
+          rechazado: 0
+        },
+        splits: {
+          train: 0,
+          val: 0,
+          test: 0,
+          holdout: 0,
+          unassigned: 0
+        },
+        modes: {
+          isolated: 0,
+          expression: 0,
+          template: 0,
+          continuous: 0
+        },
+        labels: {}
+      };
+      
+      samples.forEach(s => {
+        summary.total++;
+        
+        let status = (s.annotation_status || "pendiente").toString().trim().toLowerCase();
+        if (status === "" || status === "self_annotated") status = "pendiente";
+        if (summary.status[status] !== undefined) {
+          summary.status[status]++;
+        } else {
+          summary.status[status] = (summary.status[status] || 0) + 1;
+        }
+        
+        let split = (s.split || "unassigned").toString().trim().toLowerCase();
+        if (split === "") split = "unassigned";
+        if (summary.splits[split] !== undefined) {
+          summary.splits[split]++;
+        } else {
+          summary.splits[split] = (summary.splits[split] || 0) + 1;
+        }
+        
+        let mode = (s.capture_mode || "isolated").toString().trim().toLowerCase();
+        if (summary.modes[mode] !== undefined) {
+          summary.modes[mode]++;
+        } else {
+          summary.modes[mode] = (summary.modes[mode] || 0) + 1;
+        }
+        
+        let label = (s.label || "").toString().trim();
+        if (label) {
+          if (!summary.labels[label]) {
+            summary.labels[label] = {
+              total: 0,
+              pendiente: 0,
+              anotado: 0,
+              validado: 0,
+              requiere_revision: 0,
+              rechazado: 0
+            };
+          }
+          summary.labels[label].total++;
+          if (summary.labels[label][status] !== undefined) {
+            summary.labels[label][status]++;
+          }
+        }
+      });
+      
+      return successResponse({ summary });
+    }
+    
     return errorResponse("Acción POST desconocida o no permitida.");
     
   } catch (error) {
