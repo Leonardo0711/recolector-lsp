@@ -590,6 +590,17 @@ body {
   }
 }
 
+.btn-primary {
+  background: var(--primary);
+  color: white !important;
+  box-shadow: 0 4px 12px var(--primary-glow);
+
+  &:not(:disabled):hover {
+    background: var(--primary-hover);
+    box-shadow: 0 6px 20px var(--primary-glow);
+  }
+}
+
 .btn-danger {
   background: linear-gradient(135deg, var(--record), #ff6b81);
   color: white !important;

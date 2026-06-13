@@ -735,7 +735,7 @@ export class AdminAnnotationManager {
                                 <button type="button" class="btn btn-secondary" id="btnActionReview">
                                     <i class="fa-solid fa-triangle-exclamation"></i> Enviar a Revisión
                                 </button>
-                                <button type="submit" class="btn btn-primary" id="btnActionSave">
+                                <button type="submit" class="btn btn-primary btn-glow" id="btnActionSave">
                                     <i class="fa-solid fa-floppy-disk"></i> Guardar Anotación
                                 </button>
                             </div>
