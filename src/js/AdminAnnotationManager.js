@@ -526,10 +526,12 @@ export class AdminAnnotationManager {
 
         const statusClass = `status-${(sample.annotation_status || "pendiente").trim().toLowerCase()}`;
 
-        const embedUrl = this.getEmbedVideoUrl(sample.video_url);
-        const videoElementHtml = embedUrl
-            ? `<iframe src="${embedUrl}" class="detail-video" allow="autoplay" style="border: none;"></iframe>`
+        const directUrl = this.getDirectVideoUrl(sample.video_url);
+        const isDriveUrl = sample.video_url && (sample.video_url.includes("drive.google.com") || sample.video_url.includes("docs.google.com"));
+        const videoElementHtml = isDriveUrl
+            ? `<video src="${directUrl}" referrerpolicy="no-referrer" controls class="detail-video"></video>`
             : `<video src="${sample.video_url}" controls class="detail-video"></video>`;
+
 
         detailPanel.innerHTML = `
             <div class="sample-detail-container ${statusClass}">
