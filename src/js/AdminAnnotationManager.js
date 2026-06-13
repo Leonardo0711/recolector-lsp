@@ -574,7 +574,7 @@ export class AdminAnnotationManager {
                 </div>
 
                 <div class="detail-grid">
-                    <!-- Sección Izquierda: Ficha Técnica de Captura -->
+                    <!-- Sección Izquierda: Ficha Técnica de Captura y Decisiones Administrativas -->
                     <div class="grid-col-video">
                         <div class="technical-specs card glass">
                             <h4>Ficha Técnica</h4>
@@ -587,6 +587,67 @@ export class AdminAnnotationManager {
                                 <div class="spec-row"><span>Repetición:</span><strong>#${sample.repetition || "1"}</strong></div>
                             </div>
                         </div>
+
+                        <!-- Panel de Controles Exclusivos del Admin -->
+                        ${isAdmin ? `
+                        <div class="admin-actions card glass">
+                            <h3><i class="fa-solid fa-key"></i> Decisiones Administrativas</h3>
+                            
+                            <!-- Asignar Split -->
+                            <div class="form-field">
+                                <label for="adminSplitSelect">Dataset Split (Conjunto)</label>
+                                <select id="adminSplitSelect">
+                                    <option value="unassigned" ${split === 'unassigned' ? 'selected' : ''}>Sin Asignar (Unassigned)</option>
+                                    <option value="train" ${split === 'train' ? 'selected' : ''}>Entrenamiento (Train)</option>
+                                    <option value="val" ${split === 'val' ? 'selected' : ''}>Validación (Val)</option>
+                                    <option value="test" ${split === 'test' ? 'selected' : ''}>Prueba (Test)</option>
+                                    <option value="holdout" ${split === 'holdout' ? 'selected' : ''}>Holdout</option>
+                                </select>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="adminNotes">Notas Administrativas / Feedback</label>
+                                <textarea id="adminNotes" rows="2" placeholder="Notas del administrador sobre la muestra o su aprobación...">${adminNotes}</textarea>
+                            </div>
+
+                            <!-- Rechazar Muestra (Módulo Condicional) -->
+                            <div class="reject-panel hidden" id="rejectPanel">
+                                <div class="form-field">
+                                    <label for="adminRejectReason">Motivo de Rechazo (Obligatorio)</label>
+                                    <select id="adminRejectReason">
+                                        <option value="">-- Seleccione una razón --</option>
+                                        <option value="video_borroso" ${motivoRechazo === 'video_borroso' ? 'selected' : ''}>Video borroso o de baja calidad</option>
+                                        <option value="manos_fuera_de_cuadro" ${motivoRechazo === 'manos_fuera_de_cuadro' ? 'selected' : ''}>Manos fuera de cuadro</option>
+                                        <option value="rostro_no_visible" ${motivoRechazo === 'rostro_no_visible' ? 'selected' : ''}>Rostro no visible</option>
+                                        <option value="sena_incompleta" ${motivoRechazo === 'sena_incompleta' ? 'selected' : ''}>Seña incompleta</option>
+                                        <option value="glosa_incorrecta" ${motivoRechazo === 'glosa_incorrecta' ? 'selected' : ''}>Glosa incorrecta</option>
+                                        <option value="no_corresponde_prompt" ${motivoRechazo === 'no_corresponde_prompt' ? 'selected' : ''}>No corresponde al prompt</option>
+                                        <option value="problema_tecnico" ${motivoRechazo === 'problema_tecnico' ? 'selected' : ''}>Problema técnico</option>
+                                        <option value="otro" ${motivoRechazo === 'otro' ? 'selected' : ''}>Otro (Especificar en notas)</option>
+                                    </select>
+                                </div>
+                                <div class="reject-actions">
+                                    <button type="button" class="btn btn-secondary" id="btnCancelReject">Cancelar</button>
+                                    <button type="button" class="btn btn-danger" id="btnConfirmReject">Confirmar Rechazo</button>
+                                </div>
+                            </div>
+
+                            <!-- Panel de botones estándar -->
+                            <div class="admin-buttons-row" id="adminButtonsRow">
+                                <button type="button" class="btn btn-secondary" id="btnAdminReturnPending">
+                                    <i class="fa-solid fa-rotate-left"></i> Devolver a Pendiente
+                                </button>
+                                <button type="button" class="btn btn-danger" id="btnAdminRejectTrigger">
+                                    <i class="fa-solid fa-ban"></i> Rechazar
+                                </button>
+                                <button type="button" class="btn btn-success btn-glow" id="btnAdminValidate">
+                                    <i class="fa-solid fa-circle-check"></i> Validar y Aprobar
+                                </button>
+                            </div>
+
+                            <div id="adminActionFeedback" class="error-msg hidden" style="margin-top:10px;"></div>
+                        </div>
+                        ` : ''}
                     </div>
 
                     <!-- Sección Derecha: Ficha de Anotación Científica -->
@@ -679,67 +740,6 @@ export class AdminAnnotationManager {
                                 </button>
                             </div>
                         </form>
-
-                        <!-- Panel de Controles Exclusivos del Admin -->
-                        ${isAdmin ? `
-                        <div class="admin-actions card glass">
-                            <h3><i class="fa-solid fa-key"></i> Decisiones Administrativas</h3>
-                            
-                            <!-- Asignar Split -->
-                            <div class="form-field">
-                                <label for="adminSplitSelect">Dataset Split (Conjunto)</label>
-                                <select id="adminSplitSelect">
-                                    <option value="unassigned" ${split === 'unassigned' ? 'selected' : ''}>Sin Asignar (Unassigned)</option>
-                                    <option value="train" ${split === 'train' ? 'selected' : ''}>Entrenamiento (Train)</option>
-                                    <option value="val" ${split === 'val' ? 'selected' : ''}>Validación (Val)</option>
-                                    <option value="test" ${split === 'test' ? 'selected' : ''}>Prueba (Test)</option>
-                                    <option value="holdout" ${split === 'holdout' ? 'selected' : ''}>Holdout</option>
-                                </select>
-                            </div>
-
-                            <div class="form-field">
-                                <label for="adminNotes">Notas Administrativas / Feedback</label>
-                                <textarea id="adminNotes" rows="2" placeholder="Notas del administrador sobre la muestra o su aprobación...">${adminNotes}</textarea>
-                            </div>
-
-                            <!-- Rechazar Muestra (Módulo Condicional) -->
-                            <div class="reject-panel hidden" id="rejectPanel">
-                                <div class="form-field">
-                                    <label for="adminRejectReason">Motivo de Rechazo (Obligatorio)</label>
-                                    <select id="adminRejectReason">
-                                        <option value="">-- Seleccione una razón --</option>
-                                        <option value="video_borroso" ${motivoRechazo === 'video_borroso' ? 'selected' : ''}>Video borroso o de baja calidad</option>
-                                        <option value="manos_fuera_de_cuadro" ${motivoRechazo === 'manos_fuera_de_cuadro' ? 'selected' : ''}>Manos fuera de cuadro</option>
-                                        <option value="rostro_no_visible" ${motivoRechazo === 'rostro_no_visible' ? 'selected' : ''}>Rostro no visible</option>
-                                        <option value="sena_incompleta" ${motivoRechazo === 'sena_incompleta' ? 'selected' : ''}>Seña incompleta</option>
-                                        <option value="glosa_incorrecta" ${motivoRechazo === 'glosa_incorrecta' ? 'selected' : ''}>Glosa incorrecta</option>
-                                        <option value="no_corresponde_prompt" ${motivoRechazo === 'no_corresponde_prompt' ? 'selected' : ''}>No corresponde al prompt</option>
-                                        <option value="problema_tecnico" ${motivoRechazo === 'problema_tecnico' ? 'selected' : ''}>Problema técnico</option>
-                                        <option value="otro" ${motivoRechazo === 'otro' ? 'selected' : ''}>Otro (Especificar en notas)</option>
-                                    </select>
-                                </div>
-                                <div class="reject-actions">
-                                    <button type="button" class="btn btn-secondary" id="btnCancelReject">Cancelar</button>
-                                    <button type="button" class="btn btn-danger" id="btnConfirmReject">Confirmar Rechazo</button>
-                                </div>
-                            </div>
-
-                            <!-- Panel de botones estándar -->
-                            <div class="admin-buttons-row" id="adminButtonsRow">
-                                <button type="button" class="btn btn-secondary" id="btnAdminReturnPending">
-                                    <i class="fa-solid fa-rotate-left"></i> Devolver a Pendiente
-                                </button>
-                                <button type="button" class="btn btn-danger" id="btnAdminRejectTrigger">
-                                    <i class="fa-solid fa-ban"></i> Rechazar
-                                </button>
-                                <button type="button" class="btn btn-success btn-glow" id="btnAdminValidate">
-                                    <i class="fa-solid fa-circle-check"></i> Validar y Aprobar
-                                </button>
-                            </div>
-
-                            <div id="adminActionFeedback" class="error-msg hidden" style="margin-top:10px;"></div>
-                        </div>
-                        ` : ''}
                     </div>
                 </div>
             </div>
