@@ -46,6 +46,39 @@ document.addEventListener('DOMContentLoaded', () => {
     adminManager.init();
     window.adminInstance = adminManager;
 
+    // Función para manejar la ruta basada en hash
+    function handleHashRoute() {
+        const hash = window.location.hash;
+        const landing = document.getElementById("landing");
+        const appContainer = document.getElementById("appContainer");
+        const dashboardContainer = document.getElementById("dashboardContainer");
+
+        if (hash === "#admin" || hash === "#/admin") {
+            if (landing) landing.classList.add("hidden");
+            if (appContainer) appContainer.classList.add("hidden");
+            if (dashboardContainer) {
+                dashboardContainer.classList.remove("hidden");
+            }
+            if (window.adminInstance) {
+                window.adminInstance.open();
+            }
+        } else {
+            if (dashboardContainer) {
+                dashboardContainer.classList.add("hidden");
+            }
+            // Solo restaurar landing si ambos estaban ocultos (ej: venimos de admin)
+            if (landing && landing.classList.contains("hidden") && appContainer && appContainer.classList.contains("hidden")) {
+                landing.classList.remove("hidden");
+            }
+        }
+    }
+
+    // Detectar hash al cargar e iniciar el ruteo
+    handleHashRoute();
+
+    // Escuchar cambios de hash
+    window.addEventListener("hashchange", handleHashRoute);
+
     window.appInstance = new App();
 });
 

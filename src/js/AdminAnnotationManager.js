@@ -45,17 +45,6 @@ export class AdminAnnotationManager {
             }
         }
 
-        // Registrar escuchas para botones de apertura
-        const btnAdmin = document.getElementById("btnAdminPanel");
-        const btnAdminSidebar = document.getElementById("btnAdminPanelSidebar");
-
-        if (btnAdmin) {
-            btnAdmin.addEventListener("click", () => this.open());
-        }
-        if (btnAdminSidebar) {
-            btnAdminSidebar.addEventListener("click", () => this.open());
-        }
-
         // Renderizar pantalla inicial
         this.render();
     }
@@ -75,7 +64,14 @@ export class AdminAnnotationManager {
      */
     close() {
         this.container.classList.add("hidden");
-        document.getElementById("landing").classList.remove("hidden");
+        const landing = document.getElementById("landing");
+        if (landing) {
+            landing.classList.remove("hidden");
+        }
+        // Limpiar hash si corresponde
+        if (window.location.hash === "#admin" || window.location.hash === "#/admin") {
+            history.pushState("", document.title, window.location.pathname + window.location.search);
+        }
     }
 
     /**
@@ -252,8 +248,8 @@ export class AdminAnnotationManager {
                             <span class="switch-stars"></span>
                             <span class="switch-knob"><i class="fa-solid ${(document.documentElement.getAttribute('data-theme') || 'dark') === 'light' ? 'fa-sun' : 'fa-moon'} theme-icon"></i></span>
                         </button>
-                        <button class="btn btn-secondary" id="btnBackToGrabador" title="Ir al grabador de participante">
-                            <i class="fa-solid fa-video"></i> Capturar
+                        <button class="btn btn-secondary" id="btnBackToGrabador" title="Volver al recolector público">
+                            <i class="fa-solid fa-arrow-left"></i> Volver al recolector
                         </button>
                         <button class="btn btn-danger" id="btnLogout">
                             <i class="fa-solid fa-right-from-bracket"></i> Salir
@@ -285,8 +281,7 @@ export class AdminAnnotationManager {
         });
 
         document.getElementById("btnBackToGrabador").addEventListener("click", () => {
-            this.container.classList.add("hidden");
-            document.getElementById("appContainer").classList.remove("hidden");
+            this.close();
         });
 
         // Cargar contenido de la pestaña activa
