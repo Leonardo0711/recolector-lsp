@@ -83,6 +83,11 @@ function doPost(e) {
             `${sampleId}.${extension}`
           );
           const videoFile = videoDest.createFile(videoBlob);
+          try {
+            videoFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+          } catch (sharingError) {
+            console.error("Error al compartir archivo: " + sharingError.toString());
+          }
 
           metadata.video_url = videoFile.getUrl();
           const metaBlob = Utilities.newBlob(
@@ -205,6 +210,21 @@ function doPost(e) {
       const annotation = annotations.find(a => a.sample_id === sampleId) || null;
       
       return successResponse({ sample, annotation });
+    }
+
+    // ACCIÓN SENSIBLE: Obtener bytes de video en base64
+    if (action === "getVideoBytes") {
+      assertRole(email, accessCode, ["annotator", "admin"]);
+      const fileId = payload.fileId;
+      if (!fileId) return errorResponse("Falta fileId.");
+      try {
+        const file = DriveApp.getFileById(fileId);
+        const mimeType = file.getMimeType();
+        const base64 = Utilities.base64Encode(file.getBlob().getBytes());
+        return successResponse({ base64: base64, mimeType: mimeType });
+      } catch (err) {
+        return errorResponse("Error al leer archivo de video: " + err.toString());
+      }
     }
 
     // ACCIÓN SENSIBLE: Listar usuarios

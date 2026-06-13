@@ -12,6 +12,19 @@ export class AdminAnnotationManager {
         this.samples = [];
         this.selectedSample = null;
         this.isLoading = false;
+        this.currentVideoBlobUrl = null;
+    }
+
+    /**
+     * Extrae el ID del archivo desde una URL de Google Drive
+     */
+    getFileId(url) {
+        if (!url) return null;
+        if (url.startsWith("blob:") || url.includes("localhost")) {
+            return null;
+        }
+        const matches = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+        return (matches && matches[1]) ? matches[1] : null;
     }
 
     /**
@@ -19,12 +32,9 @@ export class AdminAnnotationManager {
      */
     getDirectVideoUrl(url) {
         if (!url) return "";
-        if (url.startsWith("blob:") || url.includes("localhost") || (!url.includes("drive.google.com") && !url.includes("docs.google.com"))) {
-            return url;
-        }
-        const matches = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
-        if (matches && matches[1]) {
-            return `https://docs.google.com/uc?export=download&id=${matches[1]}`;
+        const fileId = this.getFileId(url);
+        if (fileId) {
+            return `https://docs.google.com/uc?export=download&id=${fileId}`;
         }
         return url;
     }
@@ -34,12 +44,9 @@ export class AdminAnnotationManager {
      */
     getEmbedVideoUrl(url) {
         if (!url) return "";
-        if (url.startsWith("blob:") || url.includes("localhost") || (!url.includes("drive.google.com") && !url.includes("docs.google.com"))) {
-            return "";
-        }
-        const matches = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
-        if (matches && matches[1]) {
-            return `https://drive.google.com/file/d/${matches[1]}/preview`;
+        const fileId = this.getFileId(url);
+        if (fileId) {
+            return `https://drive.google.com/file/d/${fileId}/preview`;
         }
         return "";
     }
@@ -78,6 +85,10 @@ export class AdminAnnotationManager {
      * Cierra el panel y vuelve al landing
      */
     close() {
+        if (this.currentVideoBlobUrl) {
+            URL.revokeObjectURL(this.currentVideoBlobUrl);
+            this.currentVideoBlobUrl = null;
+        }
         this.container.classList.add("hidden");
         const landing = document.getElementById("landing");
         if (landing) {
@@ -290,6 +301,10 @@ export class AdminAnnotationManager {
         });
 
         document.getElementById("btnLogout").addEventListener("click", () => {
+            if (this.currentVideoBlobUrl) {
+                URL.revokeObjectURL(this.currentVideoBlobUrl);
+                this.currentVideoBlobUrl = null;
+            }
             localStorage.removeItem("lsp_admin_session");
             this.session = null;
             this.render();
@@ -526,12 +541,14 @@ export class AdminAnnotationManager {
 
         const statusClass = `status-${(sample.annotation_status || "pendiente").trim().toLowerCase()}`;
 
-        const directUrl = this.getDirectVideoUrl(sample.video_url);
         const isDriveUrl = sample.video_url && (sample.video_url.includes("drive.google.com") || sample.video_url.includes("docs.google.com"));
         const videoElementHtml = isDriveUrl
-            ? `<video src="${directUrl}" referrerpolicy="no-referrer" controls class="detail-video"></video>`
+            ? `<div class="video-loading-placeholder" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; min-height:200px; color:var(--text-muted);">
+                   <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem; margin-bottom:12px; color:var(--primary);"></i>
+                   <span>Cargando video de Google Drive de forma segura...</span>
+               </div>
+               <video style="display:none;" controls class="detail-video"></video>`
             : `<video src="${sample.video_url}" controls class="detail-video"></video>`;
-
 
         detailPanel.innerHTML = `
             <div class="sample-detail-container ${statusClass}">
@@ -729,6 +746,64 @@ export class AdminAnnotationManager {
         `;
 
         this.setupDetailEvents();
+        if (isDriveUrl) {
+            this.loadDriveVideo(sample.video_url);
+        }
+    }
+
+    /**
+     * Carga de forma segura un video de Google Drive descargándolo como bytes base64 desde el backend
+     */
+    async loadDriveVideo(videoUrl) {
+        const fileId = this.getFileId(videoUrl);
+        const placeholder = this.container.querySelector(".video-loading-placeholder");
+        const videoEl = this.container.querySelector(".detail-video");
+        
+        if (!fileId || !videoEl) return;
+
+        const currentSampleId = this.selectedSample ? this.selectedSample.sample.sample_id : null;
+
+        try {
+            // Limpiar blob URL anterior para evitar fugas de memoria
+            if (this.currentVideoBlobUrl) {
+                URL.revokeObjectURL(this.currentVideoBlobUrl);
+                this.currentVideoBlobUrl = null;
+            }
+
+            const res = await this.apiPost("getVideoBytes", { fileId });
+            
+            // Si la muestra seleccionada cambió mientras descargábamos, ignoramos el resultado
+            if (!this.selectedSample || this.selectedSample.sample.sample_id !== currentSampleId) {
+                return;
+            }
+
+            if (res.status === "success" && res.base64) {
+                const binaryString = atob(res.base64);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                const mimeType = res.mimeType || "video/webm";
+                const blob = new Blob([bytes], { type: mimeType });
+                this.currentVideoBlobUrl = URL.createObjectURL(blob);
+                
+                videoEl.src = this.currentVideoBlobUrl;
+                videoEl.style.display = "block";
+                if (placeholder) placeholder.remove();
+            } else {
+                throw new Error(res.message || "Error al obtener bytes de video.");
+            }
+        } catch (error) {
+            console.error("Error al cargar video de Drive:", error);
+            // Solo actualizamos la UI si seguimos en la misma muestra
+            if (this.selectedSample && this.selectedSample.sample.sample_id === currentSampleId && placeholder) {
+                placeholder.innerHTML = `<span style="color:var(--record); text-align:center; padding: 20px; display:flex; flex-direction:column; align-items:center;">
+                    <i class="fa-solid fa-triangle-exclamation" style="font-size:2rem; margin-bottom:8px;"></i>
+                    <span>Error al descargar video: ${error.message}</span>
+                </span>`;
+            }
+        }
     }
 
     /**
