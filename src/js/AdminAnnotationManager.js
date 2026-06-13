@@ -547,14 +547,16 @@ export class AdminAnnotationManager {
                     </div>
                 </div>
 
-                <div class="detail-grid">
-                    <!-- Sección Izquierda: Video y Metadatos de Captura -->
-                    <div class="grid-col-video">
-                        <div class="video-preview-wrapper">
-                            ${videoElementHtml}
-                        </div>
+                <!-- Contenedor del Video Prominente (Grande) -->
+                <div class="detail-video-hero">
+                    <div class="video-preview-wrapper">
+                        ${videoElementHtml}
+                    </div>
+                </div>
 
-                        <!-- Ficha Técnica de Captura -->
+                <div class="detail-grid">
+                    <!-- Sección Izquierda: Ficha Técnica de Captura -->
+                    <div class="grid-col-video">
                         <div class="technical-specs card glass">
                             <h4>Ficha Técnica</h4>
                             <div class="spec-table">

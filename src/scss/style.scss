@@ -2086,9 +2086,15 @@ body {
   &.split-unassigned { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); }
 }
 
+.detail-video-hero {
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto 24px auto;
+}
+
 .detail-grid {
   display: grid;
-  grid-template-columns: 1fr 1.2fr;
+  grid-template-columns: 1fr 1.4fr;
   gap: 24px;
   align-items: start;
 }
@@ -2115,7 +2121,7 @@ body {
 }
 
 .technical-specs {
-  margin-top: 20px;
+  margin-top: 0;
   
   h4 {
     font-size: 0.88rem;
