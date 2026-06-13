@@ -807,6 +807,34 @@ export class AdminAnnotationManager {
     }
 
     /**
+     * Recarga la cola actual y actualiza el visor de detalle si la muestra aún existe en ella, o la limpia si se movió a otro estado
+     */
+    async refreshQueue() {
+        const currentSampleId = this.selectedSample ? this.selectedSample.sample.sample_id : null;
+        
+        // Recargar la lista del tab actual
+        await this.loadTabContent();
+        
+        // Verificar si la muestra seleccionada aún pertenece a esta cola
+        const stillExists = this.samples.some(s => s.sample_id === currentSampleId);
+        if (stillExists && currentSampleId) {
+            await this.selectSample(currentSampleId);
+        } else {
+            this.selectedSample = null;
+            const detailPanel = document.getElementById("queueDetailPanel");
+            if (detailPanel) {
+                detailPanel.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-video"></i>
+                        <h3>Seleccione una muestra</h3>
+                        <p>Elija una tarjeta de la izquierda para comenzar el análisis.</p>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    /**
      * Asigna listeners de eventos en la ficha de detalle
      */
     setupDetailEvents() {
@@ -849,8 +877,8 @@ export class AdminAnnotationManager {
 
                 await this.apiPost("saveAnnotation", { annotation: payload });
                 
-                // Recargar detalle y lista
-                this.selectSample(sampleId);
+                // Recargar detalle y lista de la cola
+                await this.refreshQueue();
             } catch (err) {
                 feedbackDiv.textContent = err.message;
                 feedbackDiv.classList.remove("hidden");
@@ -878,7 +906,7 @@ export class AdminAnnotationManager {
                     observacion: observacion
                 });
 
-                this.selectSample(sampleId);
+                await this.refreshQueue();
             } catch (err) {
                 feedbackDiv.textContent = err.message;
                 feedbackDiv.classList.remove("hidden");
@@ -909,7 +937,7 @@ export class AdminAnnotationManager {
                         sample_id: sampleId,
                         split: splitVal
                     });
-                    this.selectSample(sampleId);
+                    await this.refreshQueue();
                 } catch (err) {
                     alert(`Error al actualizar split: ${err.message}`);
                     selectSplit.value = this.selectedSample.sample.split || "unassigned";
@@ -928,7 +956,7 @@ export class AdminAnnotationManager {
                         admin_notes: adminNotes.value.trim()
                     });
 
-                    this.selectSample(sampleId);
+                    await this.refreshQueue();
                 } catch (err) {
                     adminFeedbackDiv.textContent = err.message;
                     adminFeedbackDiv.classList.remove("hidden");
@@ -949,7 +977,7 @@ export class AdminAnnotationManager {
                         admin_notes: adminNotes.value.trim()
                     });
 
-                    this.selectSample(sampleId);
+                    await this.refreshQueue();
                 } catch (err) {
                     adminFeedbackDiv.textContent = err.message;
                     adminFeedbackDiv.classList.remove("hidden");
@@ -990,7 +1018,7 @@ export class AdminAnnotationManager {
                         admin_notes: adminNotes.value.trim()
                     });
 
-                    this.selectSample(sampleId);
+                    await this.refreshQueue();
                 } catch (err) {
                     adminFeedbackDiv.textContent = err.message;
                     adminFeedbackDiv.classList.remove("hidden");
