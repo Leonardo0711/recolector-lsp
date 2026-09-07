@@ -887,14 +887,17 @@ export class UIController {
             console.warn("Autoplay was prevented or failed:", err);
         });
 
-        // Show Review Overlay & Scientific Annotation
+        // Show Review Overlay
         this.reviewOverlay.classList.remove('hidden');
-        this.annotationPanel.classList.remove('hidden');
-        
-        // Rigor: Do NOT pre-fill value (to avoid contamination). 
-        // Use placeholder as hint so the annotator must explicitly confirm/type.
-        this.producedTextEs.value = "";
-        this.producedTextEs.placeholder = `Sugerido: ${this.currentWord.prompt_text || this.currentWord.label || ""}`;
+
+        // Solo mostrar panel de anotación in-situ si el usuario activo es administrador
+        if (this.participantData && this.participantData.role === 'admin') {
+            this.annotationPanel.classList.remove('hidden');
+            this.producedTextEs.value = "";
+            this.producedTextEs.placeholder = `Sugerido: ${this.currentWord.prompt_text || this.currentWord.label || ""}`;
+        } else {
+            this.annotationPanel.classList.add('hidden');
+        }
     }
 
     hidePreview() {
@@ -1051,20 +1054,24 @@ export class UIController {
             repetition: this.currentRepetition,
             
             // Translation & Linguistic (Real production annotation)
-            produced_text_es: this.producedTextEs.value.trim(),
-            produced_text_es_normalized: this.producedTextEs.value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""), 
+            produced_text_es: (this.producedTextEs && this.producedTextEs.value.trim()) 
+                ? this.producedTextEs.value.trim() 
+                : (w.prompt_text || w.label || ""),
+            produced_text_es_normalized: ((this.producedTextEs && this.producedTextEs.value.trim()) 
+                ? this.producedTextEs.value.trim() 
+                : (w.prompt_text || w.label || "")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""), 
             gloss_reference: w.gloss_reference || "",
-            annotation_status: "self_annotated",
+            annotation_status: (this.participantData && this.participantData.role === 'admin') ? "admin_annotated" : "pending_review",
             split: "unassigned",
             
             // Quality Flags (In-situ scientific annotation)
-            failed_capture: this.flagIncomplete.checked,
-            hands_visible: this.handsVisible.checked,
-            face_visible: this.faceVisible.checked,
-            body_visible: this.bodyVisible.checked,
-            occlusion_level: this.occlusionLevel.value,
+            failed_capture: (this.flagIncomplete && this.participantData && this.participantData.role === 'admin') ? this.flagIncomplete.checked : false,
+            hands_visible: this.handsVisible ? this.handsVisible.checked : true,
+            face_visible: this.faceVisible ? this.faceVisible.checked : true,
+            body_visible: this.bodyVisible ? this.bodyVisible.checked : true,
+            occlusion_level: this.occlusionLevel ? this.occlusionLevel.value : "low",
             linguistic_acceptability: "pending_review",
-            prompt_adherence: this.promptAdherence.checked,
+            prompt_adherence: this.promptAdherence ? this.promptAdherence.checked : true,
             
             // Technical
             app_version: "2.1.0-scientific-ready",
