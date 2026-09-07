@@ -24,15 +24,10 @@
     <!-- ==================== LANDING / HERO ==================== -->
     <section class="landing" id="landing">
         <header class="landing-header">
-            <div class="landing-header-actions">
-                <button class="btn btn-secondary btn-sm" id="btnLandingLogin" type="button">
-                    <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
-                </button>
-                <button class="theme-switch" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">
-                    <span class="switch-stars"></span>
-                    <span class="switch-knob"><i class="fa-solid fa-moon theme-icon"></i></span>
-                </button>
-            </div>
+            <button class="theme-switch" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">
+                <span class="switch-stars"></span>
+                <span class="switch-knob"><i class="fa-solid fa-moon theme-icon"></i></span>
+            </button>
         </header>
         <div class="landing-content">
             <div class="landing-badge">
@@ -94,7 +89,7 @@
             </div>
 
             <button class="btn btn-cta" id="btnParticipar">
-                <i class="fa-solid fa-rocket"></i> Comenzar a Contribuir
+                <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión / Comenzar
             </button>
 
             <p class="landing-footer-text">
@@ -106,7 +101,7 @@
     <!-- ==================== PANTALLA EXCLUSIVA DE LOGIN & ACTIVACIÓN ==================== -->
     <section class="auth-view hidden" id="authView">
         <header class="auth-header">
-            <button class="btn btn-secondary btn-sm" id="btnBackToLandingFromAuth" type="button">
+            <button class="btn-back-pill" id="btnBackToLandingFromAuth" type="button">
                 <i class="fa-solid fa-arrow-left"></i> Volver a la Portada
             </button>
             <button class="theme-switch auth-theme-switch" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">
@@ -248,7 +243,7 @@
                         <button id="btnCompleteRegistration" class="btn btn-cta" type="button" style="width: 100%; margin-top: 14px;">
                             <i class="fa-solid fa-user-check"></i> Activar Cuenta y Comenzar
                         </button>
-                        <button id="btnBackToEmailNew" class="btn btn-secondary btn-sm" type="button" style="width: 100%; margin-top: 8px;">
+                        <button id="btnBackToEmailNew" class="btn-ghost-back" type="button">
                             <i class="fa-solid fa-arrow-left"></i> Cambiar correo
                         </button>
                     </div>
@@ -272,7 +267,7 @@
                         <button id="btnLogin" class="btn btn-cta" type="button" style="width: 100%; margin-top: 14px;">
                             <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión y Continuar
                         </button>
-                        <button id="btnBackToEmailReturning" class="btn btn-secondary btn-sm" type="button" style="width: 100%; margin-top: 8px;">
+                        <button id="btnBackToEmailReturning" class="btn-ghost-back" type="button">
                             <i class="fa-solid fa-arrow-left"></i> Usar otro correo
                         </button>
                     </div>
