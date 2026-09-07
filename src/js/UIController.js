@@ -344,6 +344,9 @@ export class UIController {
         if (!item) return;
         this.currentWord = item;
         const id = item.label_id || item.prompt_id;
+        if (id) {
+            localStorage.setItem('lsp_last_selected_label_id', id);
+        }
 
         if (this.wordSearchInput) {
             this.wordSearchInput.value = item.label || item.prompt_text || '';
@@ -602,12 +605,18 @@ export class UIController {
                     localStorage.removeItem('lsp_participant_profile');
                     localStorage.removeItem('lsp_participant_uuid');
                     localStorage.removeItem('lsp_participant_resume_code');
+                    localStorage.removeItem('lsp_last_selected_label_id');
                     if (this.authHandlers && this.authHandlers.onLogout) {
                         this.authHandlers.onLogout();
                     }
                     this.participantData = null;
                     this.participantProgress = {};
-                    this.showAuthStep('email');
+                    if (this.appContainer) this.appContainer.classList.add('hidden');
+                    if (this.authView) this.authView.classList.add('hidden');
+                    if (this.landing) this.landing.classList.remove('hidden');
+                    if (window.location.hash && window.location.hash !== '') {
+                        window.location.hash = '';
+                    }
                 }
             });
         }
@@ -705,8 +714,24 @@ export class UIController {
 
     selectResumeWord() {
         if (!this.vocab || !this.vocab.length) return;
-        let item = this.lastLabelId ? this.vocab.find(v => v.label_id === this.lastLabelId && (this.participantProgress[v.label_id] || 0) < 10) : null;
-        if (!item) item = this.vocab.find(v => (this.participantProgress[v.label_id] || 0) < 10);
+        const savedLabelId = localStorage.getItem('lsp_last_selected_label_id');
+        let item = null;
+
+        // 1. Prioridad: la seña en la que el usuario se quedó en este navegador (< 10 repeticiones)
+        if (savedLabelId) {
+            item = this.vocab.find(v => (v.label_id === savedLabelId || v.prompt_id === savedLabelId) && (this.participantProgress[v.label_id] || 0) < 10);
+        }
+
+        // 2. Si no o ya se completó, usar la última seña registrada del backend
+        if (!item && this.lastLabelId) {
+            item = this.vocab.find(v => v.label_id === this.lastLabelId && (this.participantProgress[v.label_id] || 0) < 10);
+        }
+
+        // 3. Si no, buscar la primera seña pendiente en el vocabulario
+        if (!item) {
+            item = this.vocab.find(v => (this.participantProgress[v.label_id] || 0) < 10);
+        }
+
         if (!item) {
             if (this.wordSearchInput) this.wordSearchInput.value = "¡Todas las señas completadas!";
             if (this.wordSelect) this.wordSelect.value = "";
@@ -941,6 +966,17 @@ export class UIController {
         if (this.uploadProgressBarMobile) this.uploadProgressBarMobile.style.width = '100%';
         
         this.applyProgress(progress || {});
+
+        const savedSession = localStorage.getItem('lsp_user_session');
+        if (savedSession) {
+            try {
+                const parsed = JSON.parse(savedSession);
+                parsed.progress = progress || { by_label: this.participantProgress, last_label_id: this.lastLabelId };
+                localStorage.setItem('lsp_user_session', JSON.stringify(parsed));
+            } catch (e) {
+                console.warn("Error guardando progreso en sesión:", e);
+            }
+        }
 
         // Actualizar progreso para la seña actual o avanzar si ya completó las 10
         if (this.currentWord) {

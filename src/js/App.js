@@ -96,11 +96,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 dashboardContainer.classList.add("hidden");
             }
             const hasSession = !!localStorage.getItem('lsp_user_session');
-            if (hasSession && appContainer && !appContainer.classList.contains('hidden')) {
-                // Mantener sesión activa en el estudio
+            if (hasSession) {
+                // Mantener sesión abierta: ir directo al estudio y ocultar landing
+                if (landing) landing.classList.add("hidden");
+                if (authView) authView.classList.add("hidden");
+                if (appContainer) {
+                    appContainer.classList.remove("hidden");
+                }
+                if (window.appInstance && window.appInstance.ui) {
+                    window.appInstance.ui.loadParticipantFromStorage();
+                }
             } else if (authView && !authView.classList.contains('hidden')) {
                 // Mantener pantalla de autenticación si está visible
-            } else if (landing && (!appContainer || appContainer.classList.contains("hidden"))) {
+            } else if (landing) {
                 landing.classList.remove("hidden");
             }
         }
@@ -141,6 +149,19 @@ class App {
             onLogout: () => this.onLogout()
         });
         this.initEventListeners();
+
+        // Si hay sesión guardada en localStorage, cargarla y restaurar estado exacto
+        const hasSession = !!localStorage.getItem('lsp_user_session');
+        const hash = window.location.hash;
+        if (hasSession && hash !== "#admin" && hash !== "#/admin") {
+            const landing = document.getElementById("landing");
+            const authView = document.getElementById("authView");
+            const appContainer = document.getElementById("appContainer");
+            if (landing) landing.classList.add("hidden");
+            if (authView) authView.classList.add("hidden");
+            if (appContainer) appContainer.classList.remove("hidden");
+            this.ui.loadParticipantFromStorage();
+        }
     }
 
     async completeRegistration(email, tempCode, password, profile) {
@@ -178,6 +199,7 @@ class App {
         localStorage.removeItem('lsp_participant_resume_code');
         localStorage.removeItem('lsp_user_session');
         localStorage.removeItem('lsp_participant_profile');
+        localStorage.removeItem('lsp_last_selected_label_id');
         this.currentRecording = null;
     }
 
