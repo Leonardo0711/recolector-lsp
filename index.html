@@ -160,56 +160,128 @@
                     <input type="hidden" id="authTempCode">
 
                     <div class="input-group" style="margin-top: 16px;">
-                        <label class="input-label"><i class="fa-solid fa-key"></i> Crea tu Contraseña Definitiva</label>
-                        <div class="input-row-grid">
-                            <input type="password" id="authNewPassword" placeholder="Nueva contraseña" autocomplete="new-password">
-                            <input type="password" id="authConfirmPassword" placeholder="Confirmar contraseña" autocomplete="new-password">
+                        <div class="form-section-header">
+                            <i class="fa-solid fa-key"></i>
+                            <span>Seguridad de tu Cuenta</span>
+                        </div>
+                        <div class="form-row-2col">
+                            <div class="form-field">
+                                <label class="form-field-label" for="authNewPassword">
+                                    <span><i class="fa-solid fa-lock"></i> Contraseña</span>
+                                    <span class="required-badge">* Obligatorio</span>
+                                </label>
+                                <input type="password" id="authNewPassword" class="form-input-enhanced" placeholder="Crea tu contraseña" autocomplete="new-password" required>
+                            </div>
+                            <div class="form-field">
+                                <label class="form-field-label" for="authConfirmPassword">
+                                    <span><i class="fa-solid fa-check-double"></i> Confirmar</span>
+                                    <span class="required-badge">* Obligatorio</span>
+                                </label>
+                                <input type="password" id="authConfirmPassword" class="form-input-enhanced" placeholder="Repite la contraseña" autocomplete="new-password" required>
+                            </div>
                         </div>
 
-                        <label class="input-label" style="margin-top: 14px;"><i class="fa-solid fa-address-card"></i> Datos Sociolingüísticos</label>
-                        <input type="text" id="participantAlias" placeholder="Tu Nombre o Alias (Ej. Carlos M. / P01)" autocomplete="name">
+                        <div class="form-section-header" style="margin-top: 14px;">
+                            <i class="fa-solid fa-address-card"></i>
+                            <span>Datos Sociolingüísticos del Participante</span>
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-field-label" for="participantAlias">
+                                <span><i class="fa-solid fa-user"></i> Nombre o Alias para el Estudio</span>
+                                <span class="required-badge">* Obligatorio</span>
+                            </label>
+                            <input type="text" id="participantAlias" class="form-input-enhanced" placeholder="Ejemplo: Carlos M. o P01" autocomplete="name" required>
+                        </div>
                         
-                        <div class="input-row-grid">
-                            <select id="participantAge">
-                                <option value="">Rango de Edad</option>
-                                <option value="child">Niño (0-12)</option>
-                                <option value="teen">Joven (13-17)</option>
-                                <option value="adult">Adulto (18-60)</option>
-                                <option value="senior">Senior (60+)</option>
-                            </select>
-                            <select id="participantRegion">
-                                <option value="">Región</option>
-                                <option value="lima">Lima / Callao</option>
-                                <option value="norte">Norte</option>
-                                <option value="sur">Sur</option>
-                                <option value="centro">Centro</option>
-                                <option value="selva">Selva</option>
-                                <option value="extranjero">Extranjero</option>
-                            </select>
+                        <div class="form-row-2col">
+                            <div class="form-field">
+                                <label class="form-field-label" for="participantAge">
+                                    <span><i class="fa-solid fa-calendar"></i> Rango de Edad</span>
+                                    <span class="required-badge">* Obligatorio</span>
+                                </label>
+                                <div class="custom-select-wrapper">
+                                    <select id="participantAge" class="form-select-enhanced" required>
+                                        <option value="" disabled selected>-- Selecciona tu edad --</option>
+                                        <option value="child">Niño (0-12 años)</option>
+                                        <option value="teen">Joven (13-17 años)</option>
+                                        <option value="adult">Adulto (18-60 años)</option>
+                                        <option value="senior">Senior (60+ años)</option>
+                                    </select>
+                                    <i class="fa-solid fa-chevron-down select-chevron"></i>
+                                </div>
+                            </div>
+
+                            <div class="form-field">
+                                <label class="form-field-label" for="participantRegion">
+                                    <span><i class="fa-solid fa-map-location-dot"></i> Región</span>
+                                    <span class="required-badge">* Obligatorio</span>
+                                </label>
+                                <div class="custom-select-wrapper">
+                                    <select id="participantRegion" class="form-select-enhanced" required>
+                                        <option value="" disabled selected>-- Selecciona tu región --</option>
+                                        <option value="lima">Lima / Callao</option>
+                                        <option value="norte">Norte del Perú</option>
+                                        <option value="sur">Sur del Perú</option>
+                                        <option value="centro">Centro del Perú</option>
+                                        <option value="selva">Selva / Oriente</option>
+                                        <option value="extranjero">Extranjero / Otro</option>
+                                    </select>
+                                    <i class="fa-solid fa-chevron-down select-chevron"></i>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="input-row-grid">
-                            <select id="participantHand">
-                                <option value="">Mano Dominante</option>
-                                <option value="derecha">Derecha</option>
-                                <option value="izquierda">Izquierda</option>
-                                <option value="ambidiestro">Ambidiestro</option>
-                            </select>
-                            <select id="participantLevel">
-                                <option value="">Nivel LSP</option>
-                                <option value="basico">Básico</option>
-                                <option value="intermedio">Intermedio</option>
-                                <option value="avanzado">Avanzado / Nativo</option>
-                            </select>
+                        <div class="form-row-2col">
+                            <div class="form-field">
+                                <label class="form-field-label" for="participantHand">
+                                    <span><i class="fa-solid fa-hand"></i> Mano Dominante</span>
+                                    <span class="required-badge">* Obligatorio</span>
+                                </label>
+                                <div class="custom-select-wrapper">
+                                    <select id="participantHand" class="form-select-enhanced" required>
+                                        <option value="" disabled selected>-- Selecciona mano --</option>
+                                        <option value="derecha">Diestro (Mano Derecha)</option>
+                                        <option value="izquierda">Zurdo (Mano Izquierda)</option>
+                                        <option value="ambidiestro">Ambidiestro (Ambas)</option>
+                                    </select>
+                                    <i class="fa-solid fa-chevron-down select-chevron"></i>
+                                </div>
+                            </div>
+
+                            <div class="form-field">
+                                <label class="form-field-label" for="participantLevel">
+                                    <span><i class="fa-solid fa-graduation-cap"></i> Nivel en Lengua LSP</span>
+                                    <span class="required-badge">* Obligatorio</span>
+                                </label>
+                                <div class="custom-select-wrapper">
+                                    <select id="participantLevel" class="form-select-enhanced" required>
+                                        <option value="" disabled selected>-- Selecciona nivel --</option>
+                                        <option value="basico">Básico (Principiante)</option>
+                                        <option value="intermedio">Intermedio</option>
+                                        <option value="avanzado">Avanzado / Nativo</option>
+                                    </select>
+                                    <i class="fa-solid fa-chevron-down select-chevron"></i>
+                                </div>
+                            </div>
                         </div>
 
-                        <select id="participantType">
-                            <option value="">Tipo de Participante</option>
-                            <option value="nativo">Usuario Nativo (Sordo)</option>
-                            <option value="interprete">Intérprete</option>
-                            <option value="estudiante">Estudiante</option>
-                            <option value="otro">Otro / Familiar</option>
-                        </select>
+                        <div class="form-field">
+                            <label class="form-field-label" for="participantType">
+                                <span><i class="fa-solid fa-id-badge"></i> Tipo de Participante</span>
+                                <span class="required-badge">* Obligatorio</span>
+                            </label>
+                            <div class="custom-select-wrapper">
+                                <select id="participantType" class="form-select-enhanced" required>
+                                    <option value="" disabled selected>-- Selecciona tu tipo de perfil --</option>
+                                    <option value="nativo">Usuario Nativo (Persona Sorda)</option>
+                                    <option value="interprete">Intérprete Profesional de LSP</option>
+                                    <option value="estudiante">Estudiante de Lengua de Señas</option>
+                                    <option value="otro">Familiar de Persona Sorda / Voluntario</option>
+                                </select>
+                                <i class="fa-solid fa-chevron-down select-chevron"></i>
+                            </div>
+                        </div>
 
                         <!-- CONSENTIMIENTO ÉTICO INFORMADO (ÚNICA VEZ) -->
                         <div class="consent-onboarding-card">

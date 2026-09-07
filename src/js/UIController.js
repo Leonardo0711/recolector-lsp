@@ -537,13 +537,20 @@ export class UIController {
             this.btnCompleteRegistration.addEventListener('click', async () => {
                 const email = (this.authEmail.value || "").trim().toLowerCase();
                 const tempCode = (this.authTempCode.value || "").trim();
-                const newPass = (this.authNewPassword.value || "").trim();
-                const confirmPass = (this.authConfirmPassword.value || "").trim();
+                document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
 
                 if (!newPass || newPass.length < 4) {
+                    if (this.authNewPassword) {
+                        this.authNewPassword.classList.add('field-error');
+                        this.authNewPassword.focus();
+                    }
                     return this._alert("La contraseña debe tener al menos 4 caracteres.");
                 }
                 if (newPass !== confirmPass) {
+                    if (this.authConfirmPassword) {
+                        this.authConfirmPassword.classList.add('field-error');
+                        this.authConfirmPassword.focus();
+                    }
                     return this._alert("Las contraseñas no coinciden. Por favor verifícalas.");
                 }
                 if (!this.validateParticipantForm()) return;
@@ -774,19 +781,35 @@ export class UIController {
     }
 
     validateParticipantForm() {
-        if (!this.participantAlias.value.trim()) return this._alert("Ingresa un alias o código");
-        if (!this.participantAge.value) return this._alert("Selecciona rango de edad");
-        if (!this.participantRegion.value) return this._alert("Selecciona región");
-        if (!this.participantHand.value) return this._alert("Selecciona mano dominante");
-        if (!this.participantLevel.value) return this._alert("Selecciona tu nivel de LSP");
-        if (!this.participantType.value) return this._alert("Selecciona tu tipo de perfil");
+        document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+
+        const checks = [
+            { el: this.participantAlias, name: "Nombre o Alias para el estudio" },
+            { el: this.participantAge, name: "Rango de Edad" },
+            { el: this.participantRegion, name: "Región de residencia" },
+            { el: this.participantHand, name: "Mano Dominante" },
+            { el: this.participantLevel, name: "Nivel en Lengua LSP" },
+            { el: this.participantType, name: "Tipo de Participante" }
+        ];
+
+        for (const item of checks) {
+            if (!item.el || !item.el.value || !item.el.value.trim()) {
+                if (item.el) {
+                    item.el.classList.add('field-error');
+                    item.el.focus();
+                    item.el.addEventListener('change', () => item.el.classList.remove('field-error'), { once: true });
+                    item.el.addEventListener('input', () => item.el.classList.remove('field-error'), { once: true });
+                }
+                return this._alert(`El campo "${item.name}" es obligatorio. Por favor selecciónalo o complétalo para continuar.`);
+            }
+        }
         
         // Consent
         if (!this.consentCheckboxes.research.checked || 
             !this.consentCheckboxes.storage.checked || 
             !this.consentCheckboxes.training.checked || 
             !this.consentCheckboxes.age.checked) {
-            return this._alert("Debes aceptar todos los puntos de consentimiento ético.");
+            return this._alert("Debes marcar y aceptar todos los puntos de consentimiento ético informado.");
         }
         return true;
     }
