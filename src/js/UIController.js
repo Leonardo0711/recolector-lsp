@@ -363,6 +363,11 @@ export class UIController {
         if (this.wordSelectorCard) {
             this.wordSelectorCard.classList.add('combobox-active');
         }
+        if (this.comboboxWrapper && window.innerWidth <= 768) {
+            setTimeout(() => {
+                this.comboboxWrapper.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }, 60);
+        }
     }
 
     closeCombobox() {
