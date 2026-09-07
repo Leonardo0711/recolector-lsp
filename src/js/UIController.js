@@ -360,6 +360,9 @@ export class UIController {
         if (this.comboboxToggleBtn) {
             this.comboboxToggleBtn.classList.add('open');
         }
+        if (this.wordSelectorCard) {
+            this.wordSelectorCard.classList.add('combobox-active');
+        }
     }
 
     closeCombobox() {
@@ -368,6 +371,9 @@ export class UIController {
         }
         if (this.comboboxToggleBtn) {
             this.comboboxToggleBtn.classList.remove('open');
+        }
+        if (this.wordSelectorCard) {
+            this.wordSelectorCard.classList.remove('combobox-active');
         }
     }
 

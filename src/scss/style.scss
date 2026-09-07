@@ -543,6 +543,7 @@ body {
   border-radius: var(--radius-lg);
   padding: 20px;
   transition: border-color 0.3s ease;
+  position: relative;
 
   &:hover {
     border-color: var(--primary);
@@ -565,6 +566,26 @@ body {
       letter-spacing: -0.01em;
     }
   }
+}
+
+#wordSelectorCard {
+  position: relative;
+  z-index: 40;
+  overflow: visible;
+
+  &.combobox-active {
+    z-index: 150;
+  }
+}
+
+.controls-card {
+  position: relative;
+  z-index: 1;
+}
+
+.btn-sidebar-tour {
+  position: relative;
+  z-index: 1;
 }
 
 // --- Inputs ---
@@ -751,6 +772,7 @@ body {
 .combobox-wrapper {
   position: relative;
   width: 100%;
+  z-index: 80;
 
   .combobox-input-box {
     position: relative;
@@ -851,8 +873,8 @@ body {
     background: var(--bg-panel);
     border: 1px solid var(--bg-card-border);
     border-radius: var(--radius-sm);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
-    z-index: 200;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.25);
+    z-index: 999;
     overflow-y: auto;
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
