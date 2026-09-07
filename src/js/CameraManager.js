@@ -45,8 +45,20 @@ export class CameraManager {
 
     stopCamera() {
         if (this.stream) {
-            this.stream.getTracks().forEach(track => track.stop());
-            this.videoElement.srcObject = null;
+            this.stream.getTracks().forEach(track => {
+                try {
+                    track.stop();
+                } catch (e) {
+                    console.warn("Error deteniendo pista de cámara:", e);
+                }
+            });
+            this.stream = null;
+        }
+        if (this.videoElement) {
+            try {
+                this.videoElement.pause();
+                this.videoElement.srcObject = null;
+            } catch (e) {}
         }
     }
 

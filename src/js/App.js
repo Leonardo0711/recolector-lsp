@@ -72,6 +72,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const dashboardContainer = document.getElementById("dashboardContainer");
 
         if (hash === "#admin" || hash === "#/admin") {
+            if (window.appInstance && window.appInstance.camera) {
+                window.appInstance.camera.stopCamera();
+            }
+            if (window.appInstance && window.appInstance.ui) {
+                window.appInstance.ui.resetCameraState();
+            }
             if (landing) landing.classList.add("hidden");
             if (authView) authView.classList.add("hidden");
             if (appContainer) appContainer.classList.add("hidden");
@@ -82,6 +88,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.adminInstance.open();
             }
         } else if (hash === "#login" || hash === "#/login") {
+            if (window.appInstance && window.appInstance.camera) {
+                window.appInstance.camera.stopCamera();
+            }
+            if (window.appInstance && window.appInstance.ui) {
+                window.appInstance.ui.resetCameraState();
+            }
             if (dashboardContainer) dashboardContainer.classList.add("hidden");
             if (landing) landing.classList.add("hidden");
             if (appContainer) appContainer.classList.add("hidden");
@@ -109,6 +121,12 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (authView && !authView.classList.contains('hidden')) {
                 // Mantener pantalla de autenticación si está visible
             } else if (landing) {
+                if (window.appInstance && window.appInstance.camera) {
+                    window.appInstance.camera.stopCamera();
+                }
+                if (window.appInstance && window.appInstance.ui) {
+                    window.appInstance.ui.resetCameraState();
+                }
                 landing.classList.remove("hidden");
             }
         }
@@ -193,6 +211,15 @@ class App {
     }
 
     onLogout() {
+        if (this.camera) {
+            this.camera.stopCamera();
+        }
+        if (this.recorder) {
+            this.recorder = null;
+        }
+        if (this.ui) {
+            this.ui.resetCameraState();
+        }
         this.participantId = null;
         this.resumeCode = null;
         localStorage.removeItem('lsp_participant_uuid');
@@ -365,5 +392,9 @@ class App {
                 }
             });
         }
+
+        window.addEventListener('beforeunload', () => {
+            if (this.camera) this.camera.stopCamera();
+        });
     }
 }

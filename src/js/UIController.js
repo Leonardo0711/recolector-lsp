@@ -928,6 +928,45 @@ export class UIController {
         if (this.btnSwitchCamera) this.btnSwitchCamera.classList.remove('hidden');
     }
 
+    resetCameraState() {
+        if (this.btnStartCamera) {
+            this.btnStartCamera.classList.remove('hidden');
+            this.btnStartCamera.disabled = false;
+            this.btnStartCamera.innerHTML = '<i class="fa-solid fa-video"></i> Iniciar Cámara';
+        }
+        if (this.btnStartCameraMobile) {
+            this.btnStartCameraMobile.classList.remove('hidden');
+            this.btnStartCameraMobile.disabled = false;
+            this.btnStartCameraMobile.innerHTML = '<i class="fa-solid fa-video"></i> Iniciar Cámara';
+        }
+        if (this.btnRecord) {
+            this.btnRecord.classList.remove('hidden');
+            this.btnRecord.disabled = true;
+        }
+        if (this.btnStop) {
+            this.btnStop.classList.add('hidden');
+        }
+        if (this.btnRecordMobile) {
+            this.btnRecordMobile.classList.add('hidden');
+            this.btnRecordMobile.disabled = true;
+            this.btnRecordMobile.innerHTML = '<i class="fa-solid fa-circle"></i> Grabar';
+            this.btnRecordMobile.classList.remove('btn-stop');
+            this.btnRecordMobile.classList.add('btn-record');
+        }
+        if (this.btnSwitchCamera) {
+            this.btnSwitchCamera.classList.add('hidden');
+        }
+        if (this.recordingBadge) {
+            this.recordingBadge.classList.add('hidden');
+        }
+        if (this.palabraOverlay) {
+            this.palabraOverlay.classList.add('hidden');
+        }
+        if (this.webcam) {
+            this.webcam.srcObject = null;
+        }
+    }
+
     setRecordingState() {
         this.wordSelect.disabled = true;
         this.categorySelect.disabled = true;
