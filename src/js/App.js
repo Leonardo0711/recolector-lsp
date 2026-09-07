@@ -72,9 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const dashboardContainer = document.getElementById("dashboardContainer");
 
         if (hash === "#admin" || hash === "#/admin") {
-            if (window.appInstance && window.appInstance.camera) {
-                window.appInstance.camera.stopCamera();
-            }
+            CameraManager.stopAllMediaTracks();
             if (window.appInstance && window.appInstance.ui) {
                 window.appInstance.ui.resetCameraState();
             }
@@ -88,9 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.adminInstance.open();
             }
         } else if (hash === "#login" || hash === "#/login") {
-            if (window.appInstance && window.appInstance.camera) {
-                window.appInstance.camera.stopCamera();
-            }
+            CameraManager.stopAllMediaTracks();
             if (window.appInstance && window.appInstance.ui) {
                 window.appInstance.ui.resetCameraState();
             }
@@ -121,9 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (authView && !authView.classList.contains('hidden')) {
                 // Mantener pantalla de autenticación si está visible
             } else if (landing) {
-                if (window.appInstance && window.appInstance.camera) {
-                    window.appInstance.camera.stopCamera();
-                }
+                CameraManager.stopAllMediaTracks();
                 if (window.appInstance && window.appInstance.ui) {
                     window.appInstance.ui.resetCameraState();
                 }
@@ -158,7 +152,6 @@ class App {
     }
 
     async init() {
-        await this.ui.loadVocab();
         this.ui.setAuthHandlers({
             checkEmail: (email) => this.uploader.checkParticipantEmail(email),
             completeRegistration: (email, tempCode, password, profile) => this.completeRegistration(email, tempCode, password, profile),
@@ -166,6 +159,7 @@ class App {
             onSessionActive: (session) => this.onSessionActive(session),
             onLogout: () => this.onLogout()
         });
+        await this.ui.loadVocab();
         this.initEventListeners();
 
         // Si hay sesión guardada en localStorage, cargarla y restaurar estado exacto
@@ -211,6 +205,7 @@ class App {
     }
 
     onLogout() {
+        CameraManager.stopAllMediaTracks();
         if (this.camera) {
             this.camera.stopCamera();
         }
@@ -393,8 +388,12 @@ class App {
             });
         }
 
-        window.addEventListener('beforeunload', () => {
+        const stopHardware = () => {
+            CameraManager.stopAllMediaTracks();
             if (this.camera) this.camera.stopCamera();
-        });
+        };
+
+        window.addEventListener('beforeunload', stopHardware);
+        window.addEventListener('pagehide', stopHardware);
     }
 }

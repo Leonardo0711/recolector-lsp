@@ -1,4 +1,58 @@
 export class CameraManager {
+    static activeStreams = new Set();
+    static activeTracks = new Set();
+
+    /**
+     * Apaga y libera todas las pistas de hardware de video/audio activas en toda la página.
+     */
+    static stopAllMediaTracks() {
+        try {
+            // 1. Detener pistas registradas individualmente
+            CameraManager.activeTracks.forEach(track => {
+                try {
+                    track.enabled = false;
+                    track.stop();
+                } catch (e) {}
+            });
+            CameraManager.activeTracks.clear();
+
+            // 2. Detener pistas de flujos registrados
+            CameraManager.activeStreams.forEach(stream => {
+                try {
+                    if (stream && typeof stream.getTracks === 'function') {
+                        stream.getTracks().forEach(t => {
+                            try {
+                                t.enabled = false;
+                                t.stop();
+                            } catch (e) {}
+                        });
+                    }
+                } catch (e) {}
+            });
+            CameraManager.activeStreams.clear();
+
+            // 3. Inspeccionar y reiniciar todos los elementos <video> del DOM
+            document.querySelectorAll('video').forEach(video => {
+                try {
+                    if (video.srcObject && typeof video.srcObject.getTracks === 'function') {
+                        video.srcObject.getTracks().forEach(t => {
+                            try {
+                                t.enabled = false;
+                                t.stop();
+                            } catch (e) {}
+                        });
+                    }
+                    video.pause();
+                    video.srcObject = null;
+                    video.removeAttribute('src');
+                    try { video.load(); } catch (e) {}
+                } catch (e) {}
+            });
+        } catch (err) {
+            console.warn("Error en stopAllMediaTracks:", err);
+        }
+    }
+
     constructor(videoElementId) {
         this.videoElement = document.getElementById(videoElementId);
         this.stream = null;
@@ -7,6 +61,9 @@ export class CameraManager {
 
     async startCamera() {
         try {
+            // Asegurar que cualquier pista anterior esté completamente apagada
+            this.stopCamera();
+
             // Pedir alta resolución y prioridad a la cámara seleccionada
             this.stream = await navigator.mediaDevices.getUserMedia({
                 video: {
@@ -16,6 +73,15 @@ export class CameraManager {
                     facingMode: this.facingMode
                 },
                 audio: false
+            });
+
+            // Registrar flujo y pistas activas para su cierre forzoso
+            CameraManager.activeStreams.add(this.stream);
+            this.stream.getTracks().forEach(track => {
+                CameraManager.activeTracks.add(track);
+                track.addEventListener('ended', () => {
+                    CameraManager.activeTracks.delete(track);
+                });
             });
 
             this.videoElement.srcObject = this.stream;
@@ -45,21 +111,40 @@ export class CameraManager {
 
     stopCamera() {
         if (this.stream) {
-            this.stream.getTracks().forEach(track => {
-                try {
-                    track.stop();
-                } catch (e) {
-                    console.warn("Error deteniendo pista de cámara:", e);
-                }
-            });
+            try {
+                this.stream.getTracks().forEach(track => {
+                    try {
+                        track.enabled = false;
+                        track.stop();
+                    } catch (e) {
+                        console.warn("Error deteniendo pista de cámara:", e);
+                    }
+                    CameraManager.activeTracks.delete(track);
+                });
+            } catch (e) {}
+            CameraManager.activeStreams.delete(this.stream);
             this.stream = null;
         }
+
         if (this.videoElement) {
             try {
+                if (this.videoElement.srcObject && typeof this.videoElement.srcObject.getTracks === 'function') {
+                    this.videoElement.srcObject.getTracks().forEach(track => {
+                        try {
+                            track.enabled = false;
+                            track.stop();
+                        } catch (e) {}
+                        CameraManager.activeTracks.delete(track);
+                    });
+                }
                 this.videoElement.pause();
                 this.videoElement.srcObject = null;
+                this.videoElement.removeAttribute('src');
+                try { this.videoElement.load(); } catch (e) {}
             } catch (e) {}
         }
+
+        CameraManager.stopAllMediaTracks();
     }
 
     async switchCamera() {

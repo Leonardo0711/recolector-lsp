@@ -3,6 +3,8 @@
  * Módulo para la gestión de anotación, validación y administración de usuarios (Fase II)
  */
 
+import { CameraManager } from "./CameraManager.js";
+
 export class AdminAnnotationManager {
     constructor() {
         this.gasUrl = import.meta.env.VITE_GAS_URL;
@@ -331,7 +333,7 @@ export class AdminAnnotationManager {
                         <button class="btn btn-secondary btn-back-recolector" id="btnBackToGrabador" title="Volver al recolector público">
                             <i class="fa-solid fa-arrow-left"></i> <span class="btn-text">Volver</span>
                         </button>
-                        <button class="btn btn-danger btn-logout-admin" id="btnLogout" title="Cerrar sesión">
+                        <button class="btn btn-danger btn-logout-admin" id="btnAdminLogout" title="Cerrar sesión">
                             <i class="fa-solid fa-right-from-bracket"></i> <span class="btn-text">Salir</span>
                         </button>
                     </div>
@@ -354,15 +356,19 @@ export class AdminAnnotationManager {
             });
         });
 
-        document.getElementById("btnLogout").addEventListener("click", () => {
-            if (this.currentVideoBlobUrl) {
-                URL.revokeObjectURL(this.currentVideoBlobUrl);
-                this.currentVideoBlobUrl = null;
-            }
-            localStorage.removeItem("lsp_admin_session");
-            this.session = null;
-            this.render();
-        });
+        const btnAdminLogout = document.getElementById("btnAdminLogout");
+        if (btnAdminLogout) {
+            btnAdminLogout.addEventListener("click", () => {
+                CameraManager.stopAllMediaTracks();
+                if (this.currentVideoBlobUrl) {
+                    URL.revokeObjectURL(this.currentVideoBlobUrl);
+                    this.currentVideoBlobUrl = null;
+                }
+                localStorage.removeItem("lsp_admin_session");
+                this.session = null;
+                this.render();
+            });
+        }
 
         document.getElementById("btnBackToGrabador").addEventListener("click", () => {
             this.close();

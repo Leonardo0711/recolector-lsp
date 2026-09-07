@@ -1,3 +1,5 @@
+import { CameraManager } from "./CameraManager.js";
+
 export class UIController {
     constructor() {
         // --- Views & Containers ---
@@ -613,22 +615,32 @@ export class UIController {
         if (this.btnLogout) {
             this.btnLogout.addEventListener('click', () => {
                 if (confirm("¿Deseas cerrar tu sesión actual?")) {
+                    // 1. Apagar hardware de cámara inmediatamente
+                    CameraManager.stopAllMediaTracks();
+                    
+                    // 2. Limpiar llaves de sesión y progreso
                     localStorage.removeItem('lsp_user_session');
                     localStorage.removeItem('lsp_participant_profile');
                     localStorage.removeItem('lsp_participant_uuid');
                     localStorage.removeItem('lsp_participant_resume_code');
                     localStorage.removeItem('lsp_last_selected_label_id');
+                    
+                    // 3. Ejecutar handler global de logout
                     if (this.authHandlers && this.authHandlers.onLogout) {
-                        this.authHandlers.onLogout();
+                        try {
+                            this.authHandlers.onLogout();
+                        } catch (e) {
+                            console.error("Error en onLogout handler:", e);
+                        }
                     }
+                    
                     this.participantData = null;
                     this.participantProgress = {};
-                    if (this.appContainer) this.appContainer.classList.add('hidden');
-                    if (this.authView) this.authView.classList.add('hidden');
-                    if (this.landing) this.landing.classList.remove('hidden');
-                    if (window.location.hash && window.location.hash !== '') {
-                        window.location.hash = '';
-                    }
+                    this.resetCameraState();
+
+                    // 4. Redirigir limpiamente a la URL base (recarga limpia sin sesión que garantiza la liberación de hardware)
+                    const cleanUrl = window.location.origin + window.location.pathname;
+                    window.location.href = cleanUrl;
                 }
             });
         }
