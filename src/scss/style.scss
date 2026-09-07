@@ -2930,6 +2930,90 @@ body {
   }
 }
 
+.btn-sidebar-tour {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 14px;
+  margin-top: 6px;
+  margin-bottom: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+
+  .tour-btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(14, 165, 233, 0.12);
+    color: var(--primary);
+    font-size: 1.15rem;
+    flex-shrink: 0;
+    transition: all 0.25s ease;
+  }
+
+  .tour-btn-content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+  }
+
+  .tour-btn-title {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--text-main);
+    line-height: 1.25;
+  }
+
+  .tour-btn-sub {
+    font-size: 0.73rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .tour-btn-arrow {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    transition: all 0.25s ease;
+    opacity: 0.7;
+    margin-right: 2px;
+  }
+
+  &:hover {
+    border-color: var(--primary);
+    background: var(--bg-card-hover, var(--bg-card));
+    box-shadow: 0 4px 18px rgba(14, 165, 233, 0.15);
+    transform: translateY(-1px);
+
+    .tour-btn-icon {
+      background: var(--primary);
+      color: #ffffff;
+      transform: scale(1.06);
+      box-shadow: 0 0 12px rgba(14, 165, 233, 0.4);
+    }
+
+    .tour-btn-arrow {
+      color: var(--primary);
+      transform: translateX(3px);
+      opacity: 1;
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
 // =============================================
 // RESPONSIVE LANDING
 // =============================================

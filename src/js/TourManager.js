@@ -20,64 +20,73 @@ class TourManager {
                 {
                     element: '#sidebar',
                     popover: {
-                        title: '¡Bienvenido a Recolector LSP!',
-                        description: 'Estamos recolectando un dataset profesional de Lenguaje de Señas Peruano. Este recorrido te enseñará por qué cada paso es vital.',
+                        title: '👋 ¡Bienvenido a tu Estudio de Grabación!',
+                        description: 'Gracias por colaborar en la recolección del dataset de Lenguaje de Señas Peruano (LSP). Esta breve guía te mostrará cómo grabar tus señas paso a paso.',
                         side: 'right',
                         align: 'start'
                     }
                 },
                 {
-                    element: '#participantCard',
+                    element: '#comboboxWrapper',
                     popover: {
-                        title: '1. Perfil del Participante',
-                        description: 'Ingresa tus datos reales. Esto es fundamental para la variabilidad estadística (edad, región, mano dominante).',
+                        title: '1. Elige la Seña a Grabar',
+                        description: 'Escribe para buscar rápidamente o haz clic en la flecha para ver el listado de las 40 señas. El sistema seleccionará automáticamente las que tengas pendientes.',
                         side: 'bottom',
                         align: 'start'
                     }
                 },
                 {
-                    element: '#consentCard',
+                    element: '#repetitionContainer',
                     popover: {
-                        title: '2. Consentimiento Ético',
-                        description: 'La recolección sigue principios éticos. Debes autorizar el uso académico y de IA para continuar.',
+                        title: '2. Tus 10 Repeticiones',
+                        description: 'Cada seña requiere 10 tomas para que la IA aprenda bien su movimiento. Los círculos se irán marcando en verde conforme avances y tu progreso se guardará automáticamente.',
                         side: 'bottom',
-                        align: 'start'
-                    }
-                },
-                {
-                    element: '#modeSelectorCard',
-                    popover: {
-                        title: '3. Modo de Captura',
-                        description: 'Elige entre los 4 bloques (Aislado, Expresiones, Plantillas o Continuo). Cada uno tiene un objetivo científico distinto.',
-                        side: 'bottom',
-                        align: 'start'
-                    }
-                },
-                {
-                    element: '#wordSelectorCard',
-                    popover: {
-                        title: '4. Selección de Ítem',
-                        description: 'Escribe o despliega la lista para elegir la seña a grabar. Completaremos 10 repeticiones por cada una de las 40 señas.',
-                        side: 'bottom',
-                        align: 'start'
-                    }
-                },
-                {
-                    element: '.video-container',
-                    popover: {
-                        title: '4. Área de Captura',
-                        description: 'Asegúrate de tener buena iluminación y que tus manos, hombros y rostro sean visibles.',
-                        side: 'top',
                         align: 'start'
                     }
                 },
                 {
                     element: '.controls-card',
                     popover: {
-                        title: '5. Calidad y Revisión',
-                        description: 'Después de grabar, revisaremos el video. Si es claro y completo, podrás aceptarlo para subirlo a la nube.',
+                        title: '3. Iniciar la Cámara',
+                        description: 'Presiona "Iniciar Cámara" para activar tu cámara web (recuerda otorgar el permiso en tu navegador). En celular también podrás voltear la cámara.',
                         side: 'top',
                         align: 'start'
+                    }
+                },
+                {
+                    element: '#videoContainer',
+                    popover: {
+                        title: '4. Encuadre y Postura',
+                        description: 'Ubícate frente a la cámara con buena luz. Asegúrate de que tus manos, tu rostro y tus hombros permanezcan siempre dentro del marco del video.',
+                        side: 'left',
+                        align: 'start'
+                    }
+                },
+                {
+                    element: '#btnRecord',
+                    popover: {
+                        title: '5. Grabar con Cuenta Regresiva',
+                        description: 'Al pulsar "Grabar Seña", verás una cuenta regresiva de 3 segundos para alistarte. Haz la seña con naturalidad y claridad, y luego presiona "Detener".',
+                        side: 'top',
+                        align: 'start'
+                    }
+                },
+                {
+                    element: '#videoContainer',
+                    popover: {
+                        title: '6. Revisar y Subir',
+                        description: 'Al terminar de grabar, se reproducirá tu video. Si quedó claro, pulsa "Aceptar y Subir"; si te equivocaste, puedes pulsar "Repetir" todas las veces que quieras.',
+                        side: 'left',
+                        align: 'start'
+                    }
+                },
+                {
+                    element: '#userChip',
+                    popover: {
+                        title: '7. Tu Perfil y Cierre de Sesión',
+                        description: 'En la esquina superior puedes ver tu alias y mano dominante. Cuando termines o quieras descansar, usa el botón "Salir". ¡Podrás retomar en cualquier momento donde te quedaste!',
+                        side: 'bottom',
+                        align: 'end'
                     }
                 }
             ]
