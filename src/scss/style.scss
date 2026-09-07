@@ -342,7 +342,9 @@ body {
   .topbar-user-area {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
+    flex-shrink: 1;
+    min-width: 0;
 
     .user-chip {
       display: flex;
@@ -353,6 +355,8 @@ body {
       border-radius: 30px;
       border: 1px solid var(--bg-card-border);
       transition: all 0.2s ease;
+      flex-shrink: 1;
+      min-width: 0;
 
       &:hover {
         background: rgba(255, 255, 255, 0.08);
@@ -369,17 +373,23 @@ body {
         justify-content: center;
         color: white;
         font-size: 0.85rem;
+        flex-shrink: 0;
       }
 
       .user-info-sm {
         display: flex;
         flex-direction: column;
         line-height: 1.25;
+        min-width: 0;
+        overflow: hidden;
 
         .user-alias {
           font-size: 0.86rem;
           font-weight: 700;
           color: var(--text-main);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .user-meta-sub {
@@ -388,6 +398,7 @@ body {
           display: flex;
           align-items: center;
           gap: 5px;
+          white-space: nowrap;
 
           .badge-role-sm {
             color: #a855f7;
@@ -417,11 +428,17 @@ body {
       cursor: pointer;
       box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
       transition: all 0.2s ease;
+      flex-shrink: 0;
+      white-space: nowrap;
 
       &:hover {
         transform: translateY(-1px);
         box-shadow: 0 4px 14px rgba(99, 102, 241, 0.45);
       }
+    }
+
+    .theme-switch {
+      flex-shrink: 0;
     }
 
     .btn-topbar-logout {
@@ -437,6 +454,8 @@ body {
       border: 1px solid var(--bg-card-border);
       cursor: pointer;
       transition: all 0.2s ease;
+      flex-shrink: 0 !important;
+      white-space: nowrap;
 
       &:hover {
         background: rgba(239, 68, 68, 0.12);
@@ -1698,6 +1717,25 @@ body {
 }
 
 // =============================================
+// RESPONSIVE — LAPTOP / TABLET (<= 1024px)
+// =============================================
+@media (max-width: 1024px) {
+  .app-topbar {
+    padding: 0 16px;
+
+    .topbar-brand .brand-text .badge-dataset-mode,
+    .badge-dataset-mode {
+      display: none !important;
+    }
+
+    .topbar-user-area .user-chip .user-info-sm .user-meta-sub,
+    .user-meta-sub {
+      display: none !important;
+    }
+  }
+}
+
+// =============================================
 // RESPONSIVE — TABLET (<= 900px)
 // =============================================
 @media (max-width: 900px) {
@@ -1718,29 +1756,109 @@ body {
   }
 
   .app-topbar {
-    padding: 0 14px;
+    padding: 0 12px;
     height: 56px;
 
     .topbar-brand {
+      gap: 8px;
+      flex-shrink: 0;
+
+      .brand-icon-sm {
+        width: 34px;
+        height: 34px;
+        font-size: 0.95rem;
+      }
+
+      .brand-text h2 {
+        font-size: 1rem;
+      }
+
+      .brand-text .badge-dataset-mode,
       .badge-dataset-mode {
-        display: none;
+        display: none !important;
       }
     }
 
     .topbar-user-area {
       gap: 8px;
+      flex-shrink: 1;
+      min-width: 0;
 
       .user-chip {
-        padding: 4px 10px 4px 6px;
+        padding: 4px 8px 4px 5px;
+        gap: 6px;
+        max-width: 150px;
+        flex-shrink: 1;
+        min-width: 0;
 
-        .user-meta-sub {
-          display: none;
+        .user-avatar-sm {
+          width: 28px;
+          height: 28px;
+          font-size: 0.8rem;
+          flex-shrink: 0;
+        }
+
+        .user-info-sm {
+          min-width: 0;
+          overflow: hidden;
+
+          .user-alias {
+            font-size: 0.8rem;
+            max-width: 95px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .user-meta-sub {
+            display: none !important;
+          }
         }
       }
 
-      .btn-topbar-admin span,
-      .btn-topbar-logout span {
-        display: none;
+      .theme-switch {
+        transform: scale(0.85);
+        transform-origin: center right;
+        margin: 0 -2px;
+        flex-shrink: 0;
+      }
+
+      .btn-topbar-admin {
+        padding: 6px 10px;
+        font-size: 0.76rem;
+        flex-shrink: 0;
+
+        span {
+          display: none !important;
+        }
+      }
+
+      .btn-topbar-logout {
+        padding: 6px 10px;
+        min-width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.3);
+        flex-shrink: 0 !important;
+
+        span {
+          display: none !important;
+        }
+
+        i {
+          font-size: 0.9rem;
+          margin: 0;
+        }
+
+        &:hover {
+          background: rgba(239, 68, 68, 0.22);
+          border-color: #ef4444;
+        }
       }
     }
   }
@@ -1779,6 +1897,54 @@ body {
     height: 100dvh;
     min-height: 100dvh;
     overflow: hidden;
+  }
+
+  .app-topbar {
+    padding: 0 10px;
+    height: 52px;
+
+    .topbar-brand {
+      gap: 6px;
+      flex-shrink: 0;
+
+      .brand-icon-sm {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+      }
+
+      .brand-text h2 {
+        font-size: 0.92rem;
+      }
+    }
+
+    .topbar-user-area {
+      gap: 6px;
+      flex-shrink: 1;
+      min-width: 0;
+
+      .user-chip {
+        padding: 3px 6px 3px 4px;
+        max-width: 120px;
+
+        .user-info-sm .user-alias {
+          max-width: 70px;
+        }
+      }
+
+      .theme-switch {
+        transform: scale(0.8);
+        transform-origin: center right;
+        margin: 0 -3px;
+      }
+
+      .btn-topbar-logout {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        padding: 0;
+      }
+    }
   }
 
   // Sidebar se vuelve un mini panel compacto
@@ -1941,6 +2107,53 @@ body {
         background: linear-gradient(90deg, var(--success), var(--cyan));
         border-radius: 3px;
         transition: width 0.4s ease;
+      }
+    }
+  }
+}
+
+// =============================================
+// RESPONSIVE — EXTRA COMPACT MOBILE (<= 440px)
+// =============================================
+@media (max-width: 440px) {
+  .app-topbar {
+    padding: 0 8px;
+
+    .topbar-brand {
+      gap: 6px;
+
+      .brand-text h2 {
+        font-size: 0.88rem;
+      }
+    }
+
+    .topbar-user-area {
+      gap: 5px;
+
+      .user-chip {
+        padding: 0;
+        background: transparent;
+        border: none;
+
+        .user-info-sm {
+          display: none !important;
+        }
+
+        .user-avatar-sm {
+          width: 30px;
+          height: 30px;
+        }
+      }
+
+      .theme-switch {
+        transform: scale(0.74);
+        margin: 0 -5px;
+      }
+
+      .btn-topbar-logout {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
       }
     }
   }
