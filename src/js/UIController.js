@@ -20,6 +20,7 @@ export class UIController {
         this.authTempCode = document.getElementById('authTempCode');
         this.authNewPassword = document.getElementById('authNewPassword');
         this.authConfirmPassword = document.getElementById('authConfirmPassword');
+        this.passwordMatchStatus = document.getElementById('passwordMatchStatus');
         this.btnCompleteRegistration = document.getElementById('btnCompleteRegistration');
         this.btnBackToEmailNew = document.getElementById('btnBackToEmailNew');
 
@@ -535,8 +536,11 @@ export class UIController {
 
         if (this.btnCompleteRegistration) {
             this.btnCompleteRegistration.addEventListener('click', async () => {
-                const email = (this.authEmail.value || "").trim().toLowerCase();
-                const tempCode = (this.authTempCode.value || "").trim();
+                const email = (this.authEmail ? this.authEmail.value : "").trim().toLowerCase();
+                const tempCode = (this.authTempCode ? this.authTempCode.value : "").trim();
+                const newPass = (this.authNewPassword ? this.authNewPassword.value : "").trim();
+                const confirmPass = (this.authConfirmPassword ? this.authConfirmPassword.value : "").trim();
+
                 document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
 
                 if (!newPass || newPass.length < 4) {
@@ -557,17 +561,18 @@ export class UIController {
 
                 try {
                     this.btnCompleteRegistration.disabled = true;
-                    this.btnCompleteRegistration.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registrando...';
+                    this.btnCompleteRegistration.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Activando cuenta...';
                     
                     const profile = this.readParticipantForm();
                     profile.email = email;
                     const session = await this.authHandlers.completeRegistration(email, tempCode, newPass, profile);
                     this.activateParticipantSession(session, profile);
                 } catch (err) {
+                    console.error("Error en registro:", err);
                     this._alert(err.message || "Error al completar registro.");
                 } finally {
                     this.btnCompleteRegistration.disabled = false;
-                    this.btnCompleteRegistration.innerHTML = '<i class="fa-solid fa-user-check"></i> Activar Cuenta y Continuar';
+                    this.btnCompleteRegistration.innerHTML = '<i class="fa-solid fa-user-check"></i> Activar Cuenta y Comenzar';
                 }
             });
         }
@@ -627,6 +632,80 @@ export class UIController {
                 }
             });
         }
+
+        this.initPasswordToggles();
+        this.initPasswordMatchFeedback();
+    }
+
+    initPasswordToggles() {
+        const toggles = [
+            { btnId: 'btnToggleNewPwd', inputId: 'authNewPassword' },
+            { btnId: 'btnToggleConfirmPwd', inputId: 'authConfirmPassword' },
+            { btnId: 'btnToggleLoginPwd', inputId: 'authLoginPassword' },
+            { btnId: 'btnToggleResetNewPwd', inputId: 'authResetNewPassword' },
+            { btnId: 'btnToggleResetConfirmPwd', inputId: 'authResetConfirmPassword' }
+        ];
+
+        toggles.forEach(({ btnId, inputId }) => {
+            const btn = document.getElementById(btnId);
+            const input = document.getElementById(inputId);
+            if (!btn || !input) return;
+
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const isPassword = input.type === 'password';
+                input.type = isPassword ? 'text' : 'password';
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    icon.className = isPassword ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+                }
+            });
+        });
+    }
+
+    initPasswordMatchFeedback() {
+        if (!this.authNewPassword || !this.authConfirmPassword || !this.passwordMatchStatus) return;
+
+        const updateStatus = () => {
+            const p1 = this.authNewPassword.value;
+            const p2 = this.authConfirmPassword.value;
+
+            if (!p1 && !p2) {
+                this.passwordMatchStatus.className = 'password-match-hint hidden';
+                this.passwordMatchStatus.innerHTML = '';
+                return;
+            }
+
+            if (p1 && p2) {
+                if (p1 === p2) {
+                    if (p1.length >= 4) {
+                        this.passwordMatchStatus.className = 'password-match-hint match-success';
+                        this.passwordMatchStatus.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>✓ Las contraseñas coinciden correctamente</span>';
+                        this.authNewPassword.classList.remove('field-error');
+                        this.authConfirmPassword.classList.remove('field-error');
+                    } else {
+                        this.passwordMatchStatus.className = 'password-match-hint match-warning';
+                        this.passwordMatchStatus.innerHTML = '<i class="fa-solid fa-circle-info"></i> <span>Mínimo 4 caracteres requeridos</span>';
+                    }
+                } else {
+                    this.passwordMatchStatus.className = 'password-match-hint match-error';
+                    this.passwordMatchStatus.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> <span>Las contraseñas no coinciden aún</span>';
+                }
+            } else if (p1 && !p2) {
+                if (p1.length < 4) {
+                    this.passwordMatchStatus.className = 'password-match-hint match-warning';
+                    this.passwordMatchStatus.innerHTML = '<i class="fa-solid fa-circle-info"></i> <span>Mínimo 4 caracteres requeridos</span>';
+                } else {
+                    this.passwordMatchStatus.className = 'password-match-hint hidden';
+                }
+            } else {
+                this.passwordMatchStatus.className = 'password-match-hint hidden';
+            }
+        };
+
+        this.authNewPassword.addEventListener('input', updateStatus);
+        this.authConfirmPassword.addEventListener('input', updateStatus);
     }
 
     setAuthHandlers(handlers) {

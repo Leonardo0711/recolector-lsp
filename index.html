@@ -167,29 +167,39 @@
                         <div class="form-row-2col">
                             <div class="form-field">
                                 <label class="form-field-label" for="authNewPassword">
-                                    <span><i class="fa-solid fa-lock"></i> Contraseña</span>
-                                    <span class="required-badge">* Obligatorio</span>
+                                    <span><i class="fa-solid fa-lock"></i> Contraseña <span class="req-star">*</span></span>
                                 </label>
-                                <input type="password" id="authNewPassword" class="form-input-enhanced" placeholder="Crea tu contraseña" autocomplete="new-password" required>
+                                <div class="password-input-wrapper">
+                                    <input type="password" id="authNewPassword" class="form-input-enhanced" placeholder="Mínimo 4 caracteres" autocomplete="new-password" required>
+                                    <button type="button" class="btn-toggle-pwd" id="btnToggleNewPwd" title="Ver contraseña" aria-label="Mostrar contraseña">
+                                        <i class="fa-regular fa-eye"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="form-field">
                                 <label class="form-field-label" for="authConfirmPassword">
-                                    <span><i class="fa-solid fa-check-double"></i> Confirmar</span>
-                                    <span class="required-badge">* Obligatorio</span>
+                                    <span><i class="fa-solid fa-check-double"></i> Confirmar Contraseña <span class="req-star">*</span></span>
                                 </label>
-                                <input type="password" id="authConfirmPassword" class="form-input-enhanced" placeholder="Repite la contraseña" autocomplete="new-password" required>
+                                <div class="password-input-wrapper">
+                                    <input type="password" id="authConfirmPassword" class="form-input-enhanced" placeholder="Repite la contraseña" autocomplete="new-password" required>
+                                    <button type="button" class="btn-toggle-pwd" id="btnToggleConfirmPwd" title="Ver contraseña" aria-label="Mostrar contraseña">
+                                        <i class="fa-regular fa-eye"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="form-section-header" style="margin-top: 14px;">
+                        <!-- Mini mensaje en tiempo real de coincidencia -->
+                        <div id="passwordMatchStatus" class="password-match-hint hidden"></div>
+
+                        <div class="form-section-header" style="margin-top: 18px;">
                             <i class="fa-solid fa-address-card"></i>
                             <span>Datos Sociolingüísticos del Participante</span>
                         </div>
 
                         <div class="form-field">
                             <label class="form-field-label" for="participantAlias">
-                                <span><i class="fa-solid fa-user"></i> Nombre o Alias para el Estudio</span>
-                                <span class="required-badge">* Obligatorio</span>
+                                <span><i class="fa-solid fa-user"></i> Nombre o Alias para el Estudio <span class="req-star">*</span></span>
                             </label>
                             <input type="text" id="participantAlias" class="form-input-enhanced" placeholder="Ejemplo: Carlos M. o P01" autocomplete="name" required>
                         </div>
@@ -197,8 +207,7 @@
                         <div class="form-row-2col">
                             <div class="form-field">
                                 <label class="form-field-label" for="participantAge">
-                                    <span><i class="fa-solid fa-calendar"></i> Rango de Edad</span>
-                                    <span class="required-badge">* Obligatorio</span>
+                                    <span><i class="fa-solid fa-calendar"></i> Rango de Edad <span class="req-star">*</span></span>
                                 </label>
                                 <div class="custom-select-wrapper">
                                     <select id="participantAge" class="form-select-enhanced" required>
@@ -214,8 +223,7 @@
 
                             <div class="form-field">
                                 <label class="form-field-label" for="participantRegion">
-                                    <span><i class="fa-solid fa-map-location-dot"></i> Región</span>
-                                    <span class="required-badge">* Obligatorio</span>
+                                    <span><i class="fa-solid fa-map-location-dot"></i> Región <span class="req-star">*</span></span>
                                 </label>
                                 <div class="custom-select-wrapper">
                                     <select id="participantRegion" class="form-select-enhanced" required>
@@ -235,8 +243,7 @@
                         <div class="form-row-2col">
                             <div class="form-field">
                                 <label class="form-field-label" for="participantHand">
-                                    <span><i class="fa-solid fa-hand"></i> Mano Dominante</span>
-                                    <span class="required-badge">* Obligatorio</span>
+                                    <span><i class="fa-solid fa-hand"></i> Mano Dominante <span class="req-star">*</span></span>
                                 </label>
                                 <div class="custom-select-wrapper">
                                     <select id="participantHand" class="form-select-enhanced" required>
@@ -251,8 +258,7 @@
 
                             <div class="form-field">
                                 <label class="form-field-label" for="participantLevel">
-                                    <span><i class="fa-solid fa-graduation-cap"></i> Nivel en Lengua LSP</span>
-                                    <span class="required-badge">* Obligatorio</span>
+                                    <span><i class="fa-solid fa-graduation-cap"></i> Nivel en Lengua LSP <span class="req-star">*</span></span>
                                 </label>
                                 <div class="custom-select-wrapper">
                                     <select id="participantLevel" class="form-select-enhanced" required>
@@ -268,8 +274,7 @@
 
                         <div class="form-field">
                             <label class="form-field-label" for="participantType">
-                                <span><i class="fa-solid fa-id-badge"></i> Tipo de Participante</span>
-                                <span class="required-badge">* Obligatorio</span>
+                                <span><i class="fa-solid fa-id-badge"></i> Tipo de Participante <span class="req-star">*</span></span>
                             </label>
                             <div class="custom-select-wrapper">
                                 <select id="participantType" class="form-select-enhanced" required>
@@ -332,9 +337,12 @@
                     </div>
                     <div class="input-group" style="margin-top: 16px;">
                         <label for="authLoginPassword" class="input-label">Ingresa tu Contraseña Definitiva</label>
-                        <div class="input-icon-wrapper">
+                        <div class="input-icon-wrapper password-input-wrapper">
                             <i class="fa-solid fa-lock input-icon"></i>
-                            <input type="password" id="authLoginPassword" placeholder="Contraseña" autocomplete="current-password">
+                            <input type="password" id="authLoginPassword" placeholder="Contraseña" autocomplete="current-password" style="padding-right: 42px;">
+                            <button type="button" class="btn-toggle-pwd" id="btnToggleLoginPwd" title="Ver contraseña" aria-label="Mostrar contraseña">
+                                <i class="fa-regular fa-eye"></i>
+                            </button>
                         </div>
                         <button id="btnLogin" class="btn btn-cta" type="button" style="width: 100%; margin-top: 14px;">
                             <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión y Continuar
@@ -373,9 +381,19 @@
                         </div>
 
                         <label class="input-label" style="margin-top: 12px;"><i class="fa-solid fa-lock"></i> Nueva Contraseña</label>
-                        <div class="input-row-grid">
-                            <input type="password" id="authResetNewPassword" placeholder="Nueva contraseña" autocomplete="new-password">
-                            <input type="password" id="authResetConfirmPassword" placeholder="Confirmar contraseña" autocomplete="new-password">
+                        <div class="form-row-2col">
+                            <div class="password-input-wrapper">
+                                <input type="password" id="authResetNewPassword" class="form-input-enhanced" placeholder="Nueva contraseña" autocomplete="new-password" style="padding-right: 42px;">
+                                <button type="button" class="btn-toggle-pwd" id="btnToggleResetNewPwd" title="Ver contraseña" aria-label="Mostrar contraseña">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="password-input-wrapper">
+                                <input type="password" id="authResetConfirmPassword" class="form-input-enhanced" placeholder="Confirmar contraseña" autocomplete="new-password" style="padding-right: 42px;">
+                                <button type="button" class="btn-toggle-pwd" id="btnToggleResetConfirmPwd" title="Ver contraseña" aria-label="Mostrar contraseña">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
                         </div>
 
                         <button id="btnCompleteResetPassword" class="btn btn-cta" type="button" style="width: 100%; margin-top: 16px;">
