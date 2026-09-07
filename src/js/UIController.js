@@ -80,6 +80,17 @@ export class UIController {
         this.comboboxToggleBtn = document.getElementById('comboboxToggleBtn');
         this.comboboxDropdown = document.getElementById('comboboxDropdown');
         this.comboboxOptionsList = document.getElementById('comboboxOptionsList');
+        this.categoryNavBar = document.getElementById('categoryNavBar');
+        this.currentCategoryTag = document.getElementById('currentCategoryTag');
+        this.currentCategoryIcon = document.getElementById('currentCategoryIcon');
+        this.currentCategoryText = document.getElementById('currentCategoryText');
+        this.btnBrowseGroups = document.getElementById('btnBrowseGroups');
+        this.comboboxSubnav = document.getElementById('comboboxSubnav');
+        this.btnComboboxBack = document.getElementById('btnComboboxBack');
+        this.comboboxGroupBadge = document.getElementById('comboboxGroupBadge');
+        this.comboboxGroupBadgeIcon = document.getElementById('comboboxGroupBadgeIcon');
+        this.comboboxGroupBadgeText = document.getElementById('comboboxGroupBadgeText');
+        this.comboboxCurrentCategory = null;
         this.repetitionCounterText = document.getElementById('repetitionCounterText');
         this.categorySelect = document.getElementById('categorySelect');
         this.wordSelect = document.getElementById('wordSelect');
@@ -220,20 +231,6 @@ export class UIController {
     initCombobox() {
         if (!this.wordSearchInput || !this.comboboxDropdown) return;
 
-        const renderAll = () => {
-            // Mostrar SIEMPRE todas las 40 señas cuando se abre la lista
-            this.renderComboboxOptions('');
-            this.openCombobox();
-            setTimeout(() => {
-                if (this.comboboxOptionsList) {
-                    const selectedEl = this.comboboxOptionsList.querySelector('.combobox-item.selected');
-                    if (selectedEl) {
-                        selectedEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-                    }
-                }
-            }, 50);
-        };
-
         const updateClearBtn = () => {
             if (this.comboboxClearBtn) {
                 if (this.wordSearchInput.value.trim().length > 0) {
@@ -244,45 +241,50 @@ export class UIController {
             }
         };
 
-        // Al escribir: filtrar en tiempo real según lo que escribe el usuario
+        // Al escribir: buscar directamente entre todas las señas
         this.wordSearchInput.addEventListener('input', () => {
             const query = this.wordSearchInput.value.trim();
             updateClearBtn();
-            this.renderComboboxOptions(query);
+            if (query.length > 0) {
+                this.renderSearchResults(query);
+            } else {
+                this.renderCategoryList();
+            }
             this.openCombobox();
         });
 
-        // Al enfocar el input: seleccionar el texto para facilitar reemplazo y mostrar TODAS las señas
+        // Al enfocar el input: seleccionar texto y abrir palabras de la categoría actual o lista de grupos
         this.wordSearchInput.addEventListener('focus', () => {
             this.wordSearchInput.select();
-            renderAll();
+            this.openCategoryOrWords();
         });
 
-        // Al hacer clic en el input: si está cerrado, abrir mostrando todas las señas
+        // Al hacer clic en el input: abrir si está cerrado
         this.wordSearchInput.addEventListener('click', () => {
             if (this.comboboxDropdown.classList.contains('hidden')) {
                 this.wordSearchInput.select();
-                renderAll();
+                this.openCategoryOrWords();
             }
         });
 
-        // Botón limpiar (X): borra el texto, enfoca y muestra todas las opciones
+        // Botón limpiar (X): borra el texto y regresa a la vista de grupos
         if (this.comboboxClearBtn) {
             this.comboboxClearBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.wordSearchInput.value = '';
                 updateClearBtn();
-                renderAll();
+                this.renderCategoryList();
+                this.openCombobox();
                 this.wordSearchInput.focus();
             });
         }
 
-        // Botón desplegable (flecha/chevron): SIEMPRE muestra todas las 40 señas
+        // Botón desplegable (flecha/chevron): abre o cierra
         if (this.comboboxToggleBtn) {
             this.comboboxToggleBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (this.comboboxDropdown.classList.contains('hidden')) {
-                    renderAll();
+                    this.openCategoryOrWords();
                     this.wordSearchInput.select();
                     this.wordSearchInput.focus();
                 } else {
@@ -291,12 +293,39 @@ export class UIController {
             });
         }
 
+        // Botón "Ver grupos" en la barra de categoría de la tarjeta
+        if (this.btnBrowseGroups) {
+            this.btnBrowseGroups.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.renderCategoryList();
+                this.openCombobox();
+            });
+        }
+
+        // Clic en la etiqueta de categoría activa
+        if (this.currentCategoryTag) {
+            this.currentCategoryTag.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.renderCategoryList();
+                this.openCombobox();
+            });
+        }
+
+        // Botón mini-retroceder dentro del desplegable
+        if (this.btnComboboxBack) {
+            this.btnComboboxBack.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.renderCategoryList();
+            });
+        }
+
         // Cerrar al hacer clic fuera del combobox
         document.addEventListener('click', (e) => {
-            if (this.comboboxWrapper && !this.comboboxWrapper.contains(e.target)) {
+            if (this.comboboxWrapper && !this.comboboxWrapper.contains(e.target) &&
+                (!this.categoryNavBar || !this.categoryNavBar.contains(e.target))) {
                 this.closeCombobox();
-                // Si el usuario borró el texto y no eligió nada, restaurar el nombre de la seña activa
-                if (this.currentWord && this.wordSearchInput && !this.wordSearchInput.value.trim()) {
+                // Si el usuario borró o cambió el texto y no eligió nada, restaurar la seña activa
+                if (this.currentWord && this.wordSearchInput) {
                     this.wordSearchInput.value = this.currentWord.label || this.currentWord.prompt_text || '';
                     updateClearBtn();
                 }
@@ -313,6 +342,15 @@ export class UIController {
                 }
             });
         });
+    }
+
+    openCategoryOrWords() {
+        if (this.currentWord && this.currentWord.categoria) {
+            this.renderCategoryWords(this.currentWord.categoria);
+        } else {
+            this.renderCategoryList();
+        }
+        this.openCombobox();
     }
 
     openCombobox() {
@@ -333,14 +371,182 @@ export class UIController {
         }
     }
 
-    renderComboboxOptions(filter = '') {
+    getCategoryMeta(catKey) {
+        const metaMap = {
+            'comunicacion': { name: 'Comunicación', icon: 'fa-comments', color: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.14)', desc: '10 señas · Saludos y cortesía' },
+            'preguntas': { name: 'Preguntas', icon: 'fa-circle-question', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.14)', desc: '5 señas · Interrogantes básicas' },
+            'acciones': { name: 'Acciones', icon: 'fa-person-running', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.14)', desc: '10 señas · Verbos cotidianos' },
+            'necesidades': { name: 'Necesidades', icon: 'fa-hand-holding-heart', color: '#10b981', bg: 'rgba(16, 185, 129, 0.14)', desc: '8 señas · Alimentos y salud' },
+            'contexto': { name: 'Contexto y Tiempo', icon: 'fa-clock', color: '#ec4899', bg: 'rgba(236, 72, 153, 0.14)', desc: '7 señas · Momentos y estados' }
+        };
+        const norm = (catKey || '').toLowerCase();
+        return metaMap[norm] || { name: catKey || 'General', icon: 'fa-folder', color: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.14)', desc: 'Señas del vocabulario' };
+    }
+
+    updateCategoryBar(catKey) {
+        if (!this.categoryNavBar) return;
+        const meta = this.getCategoryMeta(catKey);
+        if (this.currentCategoryIcon) {
+            this.currentCategoryIcon.className = `fa-solid ${meta.icon}`;
+            this.currentCategoryIcon.style.color = meta.color;
+        }
+        if (this.currentCategoryText) {
+            this.currentCategoryText.textContent = meta.name;
+        }
+    }
+
+    renderCategoryList() {
         if (!this.comboboxOptionsList) return;
+        if (this.comboboxSubnav) this.comboboxSubnav.classList.add('hidden');
         this.comboboxOptionsList.innerHTML = '';
 
-        const normalizedFilter = filter.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const header = document.createElement('div');
+        header.className = 'combobox-cat-header';
+        header.innerHTML = '<i class="fa-solid fa-layer-group"></i> Categorías (Elige un grupo)';
+        this.comboboxOptionsList.appendChild(header);
+
+        const categories = ['comunicacion', 'preguntas', 'acciones', 'necesidades', 'contexto'];
+
+        categories.forEach(catKey => {
+            const meta = this.getCategoryMeta(catKey);
+            const wordsInCat = this.vocab.filter(v => (v.categoria || '').toLowerCase() === catKey);
+            const total = wordsInCat.length;
+            const completed = wordsInCat.filter(v => {
+                const id = v.label_id || v.prompt_id;
+                return (this.participantProgress[id] || (v.label ? this.participantProgress[v.label] : 0) || 0) >= 10;
+            }).length;
+
+            const isCurrentActiveCat = this.currentWord && (this.currentWord.categoria || '').toLowerCase() === catKey;
+
+            const card = document.createElement('div');
+            card.className = `combobox-cat-card ${isCurrentActiveCat ? 'active' : ''}`;
+            
+            let badgeClass = 'cat-badge';
+            let badgeText = `${completed}/${total} completadas`;
+            if (completed === total && total > 0) {
+                badgeClass += ' completed';
+                badgeText = `${completed}/${total} ✓`;
+            } else if (completed > 0) {
+                badgeClass += ' in-progress';
+            }
+
+            card.innerHTML = `
+                <div class="cat-card-left">
+                    <div class="cat-card-icon" style="color: ${meta.color}; background: ${meta.bg};">
+                        <i class="fa-solid ${meta.icon}"></i>
+                    </div>
+                    <div class="cat-card-details">
+                        <strong class="cat-card-name">${meta.name}</strong>
+                        <span class="cat-card-desc">${meta.desc}</span>
+                    </div>
+                </div>
+                <div class="cat-card-right">
+                    <span class="${badgeClass}">${badgeText}</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </div>
+            `;
+
+            card.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.renderCategoryWords(catKey);
+            });
+
+            this.comboboxOptionsList.appendChild(card);
+        });
+    }
+
+    renderCategoryWords(catKey) {
+        if (!this.comboboxOptionsList) return;
+        const meta = this.getCategoryMeta(catKey);
+
+        // Mostrar barra superior con botón mini-retroceder hacia los grupos
+        if (this.comboboxSubnav) {
+            this.comboboxSubnav.classList.remove('hidden');
+            if (this.comboboxGroupBadgeIcon) {
+                this.comboboxGroupBadgeIcon.className = `fa-solid ${meta.icon}`;
+                this.comboboxGroupBadgeIcon.style.color = meta.color;
+            }
+            if (this.comboboxGroupBadgeText) {
+                const wordsCount = this.vocab.filter(v => (v.categoria || '').toLowerCase() === catKey.toLowerCase()).length;
+                this.comboboxGroupBadgeText.textContent = `${meta.name} (${wordsCount})`;
+            }
+        }
+
+        this.comboboxOptionsList.innerHTML = '';
+
+        const wordsInCat = this.vocab.filter(v => (v.categoria || '').toLowerCase() === catKey.toLowerCase());
+
+        if (wordsInCat.length === 0) {
+            const noRes = document.createElement('div');
+            noRes.className = 'combobox-no-results';
+            noRes.innerHTML = '<i class="fa-solid fa-circle-question"></i> No hay señas en esta categoría';
+            this.comboboxOptionsList.appendChild(noRes);
+            return;
+        }
+
+        wordsInCat.forEach(item => {
+            const itemEl = document.createElement('div');
+            itemEl.className = 'combobox-item';
+            const id = item.label_id || item.prompt_id;
+            const label = item.label || item.prompt_text;
+            const completedReps = this.participantProgress[id] || (label ? this.participantProgress[label] : 0) || 0;
+            const isSelected = this.currentWord && ((this.currentWord.label_id || this.currentWord.prompt_id) === id || this.currentWord.label === item.label);
+
+            if (isSelected) {
+                itemEl.classList.add('selected');
+            }
+
+            let badgeClass = 'item-progress-badge';
+            let badgeText = `${completedReps}/10`;
+            if (completedReps >= 10) {
+                badgeClass += ' completed';
+                badgeText = '10/10 ✓';
+            } else if (completedReps > 0) {
+                badgeClass += ' in-progress';
+            }
+
+            itemEl.innerHTML = `
+                <div class="item-main">
+                    <span class="item-label">${item.label || item.prompt_text}</span>
+                </div>
+                <span class="${badgeClass}">${badgeText}</span>
+            `;
+
+            itemEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.selectWord(item);
+                this.closeCombobox();
+            });
+
+            this.comboboxOptionsList.appendChild(itemEl);
+        });
+
+        // Scroll a la seleccionada
+        setTimeout(() => {
+            const sel = this.comboboxOptionsList.querySelector('.combobox-item.selected');
+            if (sel) sel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }, 30);
+    }
+
+    renderSearchResults(query = '') {
+        if (!this.comboboxOptionsList) return;
+
+        const normalizedFilter = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        if (this.comboboxSubnav) {
+            this.comboboxSubnav.classList.remove('hidden');
+            if (this.comboboxGroupBadgeIcon) {
+                this.comboboxGroupBadgeIcon.className = 'fa-solid fa-magnifying-glass';
+                this.comboboxGroupBadgeIcon.style.color = 'var(--primary)';
+            }
+            if (this.comboboxGroupBadgeText) {
+                this.comboboxGroupBadgeText.textContent = `Búsqueda: "${query}"`;
+            }
+        }
+
+        this.comboboxOptionsList.innerHTML = '';
 
         const filtered = this.vocab.filter(item => {
-            if (!normalizedFilter) return true;
             const labelNorm = (item.label || item.prompt_text || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             const catNorm = (item.categoria || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             return labelNorm.includes(normalizedFilter) || catNorm.includes(normalizedFilter);
@@ -393,6 +599,16 @@ export class UIController {
         });
     }
 
+    renderComboboxOptions(filter = '') {
+        if (filter && filter.trim().length > 0) {
+            this.renderSearchResults(filter.trim());
+        } else if (this.currentWord && this.currentWord.categoria) {
+            this.renderCategoryWords(this.currentWord.categoria);
+        } else {
+            this.renderCategoryList();
+        }
+    }
+
     selectWord(item) {
         if (!item) return;
         this.currentWord = item;
@@ -409,6 +625,7 @@ export class UIController {
             this.wordSelect.value = id;
         }
 
+        this.updateCategoryBar(item.categoria);
         this.updatePromptUI();
         this.loadRepetitionProgress();
         this.updateRepetitionUI();
@@ -896,12 +1113,12 @@ export class UIController {
             return this.participantProgress[id] || (v.label ? this.participantProgress[v.label] : 0) || 0;
         };
 
-        // 1. Prioridad: la seña en la que el usuario se quedó en este navegador (< 10 repeticiones)
+        // 1. Prioridad máxima: la seña exacta en la que el usuario se quedó en este navegador
         if (savedLabelId) {
-            item = this.vocab.find(v => (v.label_id === savedLabelId || v.prompt_id === savedLabelId || v.label === savedLabelId) && getDone(v) < 10);
+            item = this.vocab.find(v => (v.label_id === savedLabelId || v.prompt_id === savedLabelId || v.label === savedLabelId));
         }
 
-        // 2. Si no o ya se completó, usar la última seña registrada del backend
+        // 2. Si no o no existe, usar la última seña registrada del backend si tiene repeticiones pendientes
         if (!item && this.lastLabelId) {
             item = this.vocab.find(v => (v.label_id === this.lastLabelId || v.label === this.lastLabelId) && getDone(v) < 10);
         }
