@@ -92,26 +92,103 @@ class App {
         
         this.currentRecording = null;
         this.sessionId = this.generateSessionId();
-        this.participantId = this.getOrCreateParticipantId();
+        this.participantId = localStorage.getItem('lsp_participant_uuid');
+        this.resumeCode = localStorage.getItem('lsp_participant_resume_code');
 
         this.init();
     }
 
     async init() {
         await this.ui.loadVocab();
+        this.ui.setAuthHandlers({
+            checkEmail: (email) => this.uploader.checkParticipantEmail(email),
+            completeRegistration: (email, tempCode, password, profile) => this.completeRegistration(email, tempCode, password, profile),
+            login: (email, password) => this.loginParticipant(email, password),
+            onSessionActive: (session) => this.onSessionActive(session),
+            onLogout: () => this.onLogout()
+        });
         this.initEventListeners();
+    }
+
+    async completeRegistration(email, tempCode, password, profile) {
+        const response = await this.uploader.completeFirstTimeRegistration(email, tempCode, password, profile);
+        this.participantId = response.participant?.participant_id || response.participant_id;
+        if (this.participantId) {
+            localStorage.setItem('lsp_participant_uuid', this.participantId);
+        }
+        localStorage.setItem('lsp_user_session', JSON.stringify(response));
+        return response;
+    }
+
+    async loginParticipant(email, password) {
+        const response = await this.uploader.loginParticipant(email, password);
+        this.participantId = response.participant?.participant_id || response.participant_id;
+        if (this.participantId) {
+            localStorage.setItem('lsp_participant_uuid', this.participantId);
+        }
+        localStorage.setItem('lsp_user_session', JSON.stringify(response));
+        return response;
+    }
+
+    onSessionActive(session) {
+        if (session && session.participant) {
+            this.participantId = session.participant.participant_id;
+            localStorage.setItem('lsp_participant_uuid', this.participantId);
+            localStorage.setItem('lsp_user_session', JSON.stringify(session));
+        }
+    }
+
+    onLogout() {
+        this.participantId = null;
+        this.resumeCode = null;
+        localStorage.removeItem('lsp_participant_uuid');
+        localStorage.removeItem('lsp_participant_resume_code');
+        localStorage.removeItem('lsp_user_session');
+        localStorage.removeItem('lsp_participant_profile');
+        this.currentRecording = null;
     }
 
     /**
      * Generates a persistent UUID for the participant.
      */
-    getOrCreateParticipantId() {
-        let id = localStorage.getItem('lsp_participant_uuid');
-        if (!id) {
-            id = crypto.randomUUID ? crypto.randomUUID() : `P-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            localStorage.setItem('lsp_participant_uuid', id);
-        }
-        return id;
+    createParticipantId() {
+        return crypto.randomUUID ? crypto.randomUUID() : `P-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+    }
+
+    createResumeCode() {
+        const bytes = new Uint8Array(8);
+        crypto.getRandomValues(bytes);
+        const value = Array.from(bytes, byte => byte.toString(16).padStart(2, '0').toUpperCase()).join('');
+        return `LSP-${value.match(/.{1,4}/g).join('-')}`;
+    }
+
+    async registerParticipant(profile) {
+        if (!this.participantId) this.participantId = this.createParticipantId();
+        if (!this.resumeCode) this.resumeCode = this.createResumeCode();
+
+        const response = await this.uploader.registerParticipant({
+            participant_id: this.participantId,
+            resume_code: this.resumeCode,
+            alias: profile.alias,
+            age: profile.age,
+            region: profile.region,
+            dominant_hand: profile.hand,
+            lsp_level: profile.level,
+            participant_type: profile.type
+        });
+
+        localStorage.setItem('lsp_participant_uuid', this.participantId);
+        localStorage.setItem('lsp_participant_resume_code', this.resumeCode);
+        return { ...response, participant_id: this.participantId, resume_code: this.resumeCode };
+    }
+
+    async resumeParticipant(participantId, resumeCode) {
+        const response = await this.uploader.resumeParticipant(participantId, resumeCode);
+        this.participantId = participantId;
+        this.resumeCode = resumeCode;
+        localStorage.setItem('lsp_participant_uuid', participantId);
+        localStorage.setItem('lsp_participant_resume_code', resumeCode);
+        return response;
     }
 
     generateSessionId() {
@@ -177,6 +254,7 @@ class App {
             if (this.ui.recordingBadge.classList.contains('hidden')) {
                 if (!this.ui.participantData) return alert("Primero confirma tus datos de participante.");
                 if (!this.ui.currentWord) return alert("Selecciona un ítem para grabar.");
+                if (this.ui.currentRepetition > 10) return alert("Esta seña ya tiene sus 10 repeticiones. Elige otra seña.");
                 
                 // Block UI during countdown
                 this.ui.btnRecord.disabled = true;
@@ -213,6 +291,7 @@ class App {
                     const meta = this.ui.getMetadata();
                     const payload = {
                         ...meta, 
+                        capture_id: crypto.randomUUID ? crypto.randomUUID() : `C-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
                         session_id: this.sessionId,
                         capture_datetime: new Date().toISOString(),
                         width: this.currentRecording.width,
@@ -224,7 +303,7 @@ class App {
                     const response = await this.uploader.uploadData(this.currentRecording.videoBlob, payload);
                     console.log("Subida exitosa:", response.sample_id);
                     
-                    this.ui.setFinishedState();
+                    this.ui.setFinishedState(response.progress);
                     this.currentRecording = null;
                 } catch (error) {
                     this.ui.setErrorState(error.message);
@@ -233,4 +312,3 @@ class App {
         }
     }
 }
-

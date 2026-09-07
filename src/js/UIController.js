@@ -1,20 +1,49 @@
 export class UIController {
     constructor() {
-        // --- Participant Form ---
+        // --- Participant Auth Elements ---
         this.participantCard = document.getElementById('participantCard');
+        this.authCardTitle = document.getElementById('authCardTitle');
+        this.authStepEmail = document.getElementById('authStepEmail');
+        this.authStepNewUser = document.getElementById('authStepNewUser');
+        this.authStepReturningUser = document.getElementById('authStepReturningUser');
+        this.authStepActiveSession = document.getElementById('authStepActiveSession');
+
+        this.authEmail = document.getElementById('authEmail');
+        this.btnCheckEmail = document.getElementById('btnCheckEmail');
+
+        this.displayTempCode = document.getElementById('displayTempCode');
+        this.authTempCode = document.getElementById('authTempCode');
+        this.authNewPassword = document.getElementById('authNewPassword');
+        this.authConfirmPassword = document.getElementById('authConfirmPassword');
+        this.btnCompleteRegistration = document.getElementById('btnCompleteRegistration');
+        this.btnBackToEmailNew = document.getElementById('btnBackToEmailNew');
+
+        this.greetingAlias = document.getElementById('greetingAlias');
+        this.greetingEmail = document.getElementById('greetingEmail');
+        this.authLoginPassword = document.getElementById('authLoginPassword');
+        this.btnLogin = document.getElementById('btnLogin');
+        this.btnBackToEmailReturning = document.getElementById('btnBackToEmailReturning');
+
+        this.activeProfileAlias = document.getElementById('activeProfileAlias');
+        this.activeProfileEmail = document.getElementById('activeProfileEmail');
+        this.activeProfileRole = document.getElementById('activeProfileRole');
+        this.activeProfileHand = document.getElementById('activeProfileHand');
+        this.activeProfileLevel = document.getElementById('activeProfileLevel');
+        this.activeProfileRegion = document.getElementById('activeProfileRegion');
+        this.adminPanelQuickLink = document.getElementById('adminPanelQuickLink');
+        this.btnGoToAdmin = document.getElementById('btnGoToAdmin');
+        this.btnLogout = document.getElementById('btnLogout');
+
+        // Form fields for profile
         this.participantAlias = document.getElementById('participantAlias');
         this.participantAge = document.getElementById('participantAge');
         this.participantRegion = document.getElementById('participantRegion');
         this.participantHand = document.getElementById('participantHand');
         this.participantLevel = document.getElementById('participantLevel');
         this.participantType = document.getElementById('participantType');
-        this.btnSaveParticipant = document.getElementById('btnSaveParticipant');
-        this.participantSavedMsg = document.getElementById('participantSavedMsg');
 
         // --- Capture Mode ---
-        this.modeSelectorCard = document.getElementById('modeSelectorCard');
         this.modeSelect = document.getElementById('modeSelect');
-        this.modeDescription = document.getElementById('modeDescription');
         this.selectorTitle = document.getElementById('selectorTitle');
 
         // --- Consent ---
@@ -89,27 +118,26 @@ export class UIController {
         this.currentWord = null;
         this.currentRepetition = 1;
         this.participantData = null;
+        this.participantProgress = {};
+        this.lastLabelId = null;
+        this.pendingResumeSession = null;
+        this.registerParticipantHandler = null;
+        this.resumeParticipantHandler = null;
+        this.authHandlers = null;
 
-        this.initParticipantLogic();
+        this.initAuthLogic();
         this.initModeLogic();
         this.initReviewButtons();
         this.initProtocol();
         this.initSearchLogic();
         
-        // Load existing participant if available
+        // Load existing participant session if available
         this.loadParticipantFromStorage();
     }
 
     // ========== DATA & VOCABULARY ==========
     async loadVocab() {
-        const mode = this.modeSelect.value;
-        let file = 'lexicon_isolated_v1.json';
-        
-        switch(mode) {
-            case 'expression': file = 'expressions_v1.json'; break;
-            case 'template': file = 'templates_v1.json'; break;
-            case 'continuous': file = 'continuous_prompts_v1.json'; break;
-        }
+        const file = 'lexicon_isolated_v1.json';
 
         try {
             const response = await fetch(`./data/${file}`);
@@ -134,17 +162,8 @@ export class UIController {
     }
 
     initModeLogic() {
-        const descriptions = {
-            isolated: "Captura de señas individuales, una por clip. (180-250 labels)",
-            expression: "Secuencias cortas que funcionan casi como unidad. (30-60 expresiones)",
-            template: "Plantillas estructuradas (Ej: YO + NECESITAR + AYUDA).",
-            continuous: " Signing continuo controlado. Oraciones completas o pequeños discursos."
-        };
-
-        this.modeSelect.addEventListener('change', () => {
-            this.modeDescription.textContent = descriptions[this.modeSelect.value];
-            this.loadVocab();
-        });
+        // El protocolo de bachiller captura únicamente señas aisladas.
+        this.modeSelect.value = 'isolated';
     }
 
     updateSelectorUI() {
@@ -290,67 +309,290 @@ export class UIController {
     // ========== REPETITION PERSISTENCE ==========
     loadRepetitionProgress() {
         if (!this.currentWord) return;
-        const participantUuid = localStorage.getItem('lsp_participant_uuid');
-        if (!participantUuid) {
-            this.currentRepetition = 1;
-            return;
-        }
-
         const id = this.currentWord.label_id || this.currentWord.prompt_id;
-        const key = `lsp_rep_${participantUuid}_${id}`;
-        const saved = localStorage.getItem(key);
-        this.currentRepetition = saved ? parseInt(saved) : 1;
-        
-        if (this.currentRepetition > 5) {
-             // Si el progreso quedó guardado con un número mayor a 5 (por el bug anterior),
-             // lo reiniciamos inmediatamente a 1 para destrabar el selector.
-             this.currentRepetition = 1;
-             this.saveRepetitionProgress();
-        }
+        this.currentRepetition = (this.participantProgress[id] || 0) + 1;
     }
 
     saveRepetitionProgress() {
-        if (!this.currentWord) return;
-        const participantUuid = localStorage.getItem('lsp_participant_uuid');
-        if (!participantUuid) return;
-
-        const id = this.currentWord.label_id || this.currentWord.prompt_id;
-        const key = `lsp_rep_${participantUuid}_${id}`;
-        localStorage.setItem(key, this.currentRepetition);
+        // El progreso válido vive en Google Sheets, no solo en el navegador.
     }
 
-    // ========== PARTICIPANT & CONSENT ==========
-    initParticipantLogic() {
-        this.btnSaveParticipant.addEventListener('click', () => {
-            if (this.validateParticipantForm()) {
-                this.lockParticipantForm();
-                this.saveParticipantToStorage();
-            }
-        });
-    }
+    // ========== PARTICIPANT AUTHENTICATION & SESSION ==========
+    showAuthStep(step) {
+        if (this.authStepEmail) this.authStepEmail.classList.add('hidden');
+        if (this.authStepNewUser) this.authStepNewUser.classList.add('hidden');
+        if (this.authStepReturningUser) this.authStepReturningUser.classList.add('hidden');
+        if (this.authStepActiveSession) this.authStepActiveSession.classList.add('hidden');
 
-    loadParticipantFromStorage() {
-        const saved = localStorage.getItem('lsp_participant_profile');
-        if (saved) {
-            const p = JSON.parse(saved);
-            this.participantAlias.value = p.alias;
-            this.participantAge.value = p.age;
-            this.participantRegion.value = p.region;
-            this.participantHand.value = p.hand;
-            this.participantLevel.value = p.level;
-            this.participantType.value = p.type;
-            
-            // Ethics: Do NOT auto-check consents OR auto-lock. 
-            // The user must manually confirm ethical adherence in each session.
-            Object.values(this.consentCheckboxes).forEach(cb => cb.checked = false);
-            
-            // We populate the fields but leave the form UNLOCKED 
-            // so they can check consents and click "Save" to activate the session.
+        if (step === 'email' && this.authStepEmail) {
+            this.authStepEmail.classList.remove('hidden');
+            if (this.authCardTitle) this.authCardTitle.textContent = "Acceso de Participante";
+            this.wordSelectorCard.classList.add('hidden');
+        } else if (step === 'new' && this.authStepNewUser) {
+            this.authStepNewUser.classList.remove('hidden');
+            if (this.authCardTitle) this.authCardTitle.textContent = "Activar Cuenta (Primer Ingreso)";
+        } else if (step === 'returning' && this.authStepReturningUser) {
+            this.authStepReturningUser.classList.remove('hidden');
+            if (this.authCardTitle) this.authCardTitle.textContent = "Iniciar Sesión";
+        } else if (step === 'active' && this.authStepActiveSession) {
+            this.authStepActiveSession.classList.remove('hidden');
+            if (this.authCardTitle) this.authCardTitle.textContent = "Sesión Activa";
+            this.wordSelectorCard.classList.remove('hidden');
         }
     }
 
+    initAuthLogic() {
+        if (this.btnCheckEmail) {
+            this.btnCheckEmail.addEventListener('click', async () => {
+                const email = (this.authEmail.value || "").trim().toLowerCase();
+                if (!email || !email.includes('@')) {
+                    return this._alert("Por favor ingresa un correo electrónico válido.");
+                }
+                if (!this.authHandlers || !this.authHandlers.checkEmail) {
+                    return this._alert("Servicio de autenticación no inicializado.");
+                }
+
+                try {
+                    this.btnCheckEmail.disabled = true;
+                    this.btnCheckEmail.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verificando...';
+                    const res = await this.authHandlers.checkEmail(email);
+
+                    if (res.is_new || res.must_change_password) {
+                        // Usuario nuevo o que aún no define contraseña: código autorrellenado
+                        if (this.displayTempCode) this.displayTempCode.textContent = res.temp_code || "LSP-XXXX";
+                        if (this.authTempCode) this.authTempCode.value = res.temp_code || "";
+                        if (res.alias && this.participantAlias) this.participantAlias.value = res.alias;
+                        this.showAuthStep('new');
+                        if (this.authNewPassword) this.authNewPassword.focus();
+                    } else {
+                        // Usuario recurrente con contraseña
+                        if (this.greetingAlias) this.greetingAlias.textContent = res.alias || email.split('@')[0];
+                        if (this.greetingEmail) this.greetingEmail.textContent = email;
+                        if (this.authLoginPassword) this.authLoginPassword.value = "";
+                        this.showAuthStep('returning');
+                        if (this.authLoginPassword) this.authLoginPassword.focus();
+                    }
+                } catch (err) {
+                    this._alert(err.message || "Error al verificar el correo.");
+                } finally {
+                    this.btnCheckEmail.disabled = false;
+                    this.btnCheckEmail.innerHTML = '<i class="fa-solid fa-arrow-right"></i> Continuar';
+                }
+            });
+        }
+
+        if (this.btnBackToEmailNew) {
+            this.btnBackToEmailNew.addEventListener('click', () => this.showAuthStep('email'));
+        }
+        if (this.btnBackToEmailReturning) {
+            this.btnBackToEmailReturning.addEventListener('click', () => this.showAuthStep('email'));
+        }
+
+        if (this.btnCompleteRegistration) {
+            this.btnCompleteRegistration.addEventListener('click', async () => {
+                const email = (this.authEmail.value || "").trim().toLowerCase();
+                const tempCode = (this.authTempCode.value || "").trim();
+                const newPass = (this.authNewPassword.value || "").trim();
+                const confirmPass = (this.authConfirmPassword.value || "").trim();
+
+                if (!newPass || newPass.length < 4) {
+                    return this._alert("La contraseña debe tener al menos 4 caracteres.");
+                }
+                if (newPass !== confirmPass) {
+                    return this._alert("Las contraseñas no coinciden. Por favor verifícalas.");
+                }
+                if (!this.validateParticipantForm()) return;
+
+                try {
+                    this.btnCompleteRegistration.disabled = true;
+                    this.btnCompleteRegistration.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registrando...';
+                    
+                    const profile = this.readParticipantForm();
+                    profile.email = email;
+                    const session = await this.authHandlers.completeRegistration(email, tempCode, newPass, profile);
+                    this.activateParticipantSession(session, profile);
+                } catch (err) {
+                    this._alert(err.message || "Error al completar registro.");
+                } finally {
+                    this.btnCompleteRegistration.disabled = false;
+                    this.btnCompleteRegistration.innerHTML = '<i class="fa-solid fa-user-check"></i> Activar Cuenta y Continuar';
+                }
+            });
+        }
+
+        if (this.btnLogin) {
+            this.btnLogin.addEventListener('click', async () => {
+                const email = (this.authEmail.value || "").trim().toLowerCase();
+                const pass = (this.authLoginPassword.value || "").trim();
+                if (!pass) return this._alert("Ingresa tu contraseña.");
+
+                try {
+                    this.btnLogin.disabled = true;
+                    this.btnLogin.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Ingresando...';
+                    const session = await this.authHandlers.login(email, pass);
+                    this.activateParticipantSession(session, session.participant);
+                } catch (err) {
+                    this._alert(err.message || "Error de inicio de sesión.");
+                } finally {
+                    this.btnLogin.disabled = false;
+                    this.btnLogin.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión';
+                }
+            });
+        }
+
+        if (this.btnGoToAdmin) {
+            this.btnGoToAdmin.addEventListener('click', () => {
+                window.location.hash = '#admin';
+            });
+        }
+
+        if (this.btnLogout) {
+            this.btnLogout.addEventListener('click', () => {
+                if (confirm("¿Deseas cerrar tu sesión actual?")) {
+                    localStorage.removeItem('lsp_user_session');
+                    localStorage.removeItem('lsp_participant_profile');
+                    localStorage.removeItem('lsp_participant_uuid');
+                    localStorage.removeItem('lsp_participant_resume_code');
+                    if (this.authHandlers && this.authHandlers.onLogout) {
+                        this.authHandlers.onLogout();
+                    }
+                    this.participantData = null;
+                    this.participantProgress = {};
+                    this.showAuthStep('email');
+                }
+            });
+        }
+    }
+
+    setAuthHandlers(handlers) {
+        this.authHandlers = handlers;
+    }
+
+    setParticipantHandlers(handlers) {
+        // Compatibilidad hacia atrás
+        this.setAuthHandlers(handlers);
+    }
+
+    readParticipantForm() {
+        return {
+            alias: this.participantAlias.value.trim().toUpperCase(),
+            age: this.participantAge.value,
+            region: this.participantRegion.value,
+            dominant_hand: this.participantHand.value,
+            hand: this.participantHand.value,
+            lsp_level: this.participantLevel.value,
+            level: this.participantLevel.value,
+            participant_type: this.participantType.value,
+            type: this.participantType.value,
+            consent_research: this.consentCheckboxes.research.checked,
+            consent_training: this.consentCheckboxes.training.checked,
+            consent_storage: this.consentCheckboxes.storage.checked,
+            consent_age: this.consentCheckboxes.age.checked
+        };
+    }
+
+    fillParticipantForm(p) {
+        if (!p) return;
+        if (this.participantAlias) this.participantAlias.value = p.alias || "";
+        if (this.participantAge) this.participantAge.value = p.age || "";
+        if (this.participantRegion) this.participantRegion.value = p.region || "";
+        if (this.participantHand) this.participantHand.value = p.dominant_hand || p.hand || "";
+        if (this.participantLevel) this.participantLevel.value = p.lsp_level || p.level || "";
+        if (this.participantType) this.participantType.value = p.participant_type || p.type || "";
+    }
+
+    activateParticipantSession(session, fallbackProfile) {
+        this.participantData = session.participant || fallbackProfile;
+        if (session.role) this.participantData.role = session.role;
+        this.applyProgress(session.progress || {});
+
+        // Persistir sesión y UUID en localStorage
+        localStorage.setItem('lsp_user_session', JSON.stringify(session));
+        if (this.participantData && this.participantData.participant_id) {
+            localStorage.setItem('lsp_participant_uuid', this.participantData.participant_id);
+        }
+
+        // Actualizar tarjeta de perfil activo
+        if (this.activeProfileAlias) this.activeProfileAlias.textContent = this.participantData.alias || "Participante";
+        if (this.activeProfileEmail) this.activeProfileEmail.textContent = this.participantData.email || (this.authEmail ? this.authEmail.value.trim() : "") || "";
+        if (this.activeProfileRole) {
+            this.activeProfileRole.textContent = session.role === 'admin' ? "Administrador" : "Participante";
+        }
+        if (this.activeProfileHand) {
+            this.activeProfileHand.textContent = this.participantData.dominant_hand || this.participantData.hand || "N/A";
+        }
+        if (this.activeProfileLevel) {
+            this.activeProfileLevel.textContent = this.participantData.lsp_level || this.participantData.level || "N/A";
+        }
+        if (this.activeProfileRegion) {
+            this.activeProfileRegion.textContent = this.participantData.region || "N/A";
+        }
+
+        if (this.adminPanelQuickLink) {
+            if (session.role === 'admin') {
+                this.adminPanelQuickLink.classList.remove('hidden');
+            } else {
+                this.adminPanelQuickLink.classList.add('hidden');
+            }
+        }
+
+        this.showAuthStep('active');
+        this.wordSelectorCard.classList.remove('hidden');
+        this.saveParticipantToStorage();
+        this.selectResumeWord();
+        
+        if (this.authHandlers && this.authHandlers.onSessionActive) {
+            this.authHandlers.onSessionActive(session);
+        }
+    }
+
+    applyProgress(progress) {
+        this.participantProgress = progress.by_label || {};
+        this.lastLabelId = progress.last_label_id || null;
+    }
+
+    selectResumeWord() {
+        if (!this.vocab.length) return;
+        let item = this.vocab.find(v => v.label_id === this.lastLabelId && (this.participantProgress[v.label_id] || 0) < 10);
+        if (!item) item = this.vocab.find(v => (this.participantProgress[v.label_id] || 0) < 10);
+        if (!item) {
+            this.wordSelect.value = "";
+            this.currentWord = null;
+            this.promptInstructions.classList.remove('hidden');
+            this.promptTextDisplay.textContent = "¡Completaste las 40 señas y sus 10 repeticiones!";
+            this.durationLimitNote.textContent = "Gracias por completar el protocolo.";
+            return;
+        }
+        this.categorySelect.value = item.categoria;
+        const words = this.vocab.filter(v => v.categoria === item.categoria);
+        this.populateWords(words);
+        this.wordSelect.value = item.label_id;
+        this.currentWord = item;
+        this.updatePromptUI();
+        this.loadRepetitionProgress();
+        this.updateRepetitionUI();
+    }
+
+    loadParticipantFromStorage() {
+        const savedSession = localStorage.getItem('lsp_user_session');
+        if (savedSession) {
+            try {
+                const session = JSON.parse(savedSession);
+                if (session && session.participant) {
+                    this.activateParticipantSession(session, session.participant);
+                    return;
+                }
+            } catch (e) {
+                console.warn("Sesión inválida guardada:", e);
+            }
+        }
+        this.showAuthStep('email');
+    }
+
     saveParticipantToStorage() {
-        localStorage.setItem('lsp_participant_profile', JSON.stringify(this.participantData));
+        if (this.participantData) {
+            localStorage.setItem('lsp_participant_profile', JSON.stringify(this.participantData));
+        }
     }
 
     validateParticipantForm() {
@@ -366,32 +608,13 @@ export class UIController {
             !this.consentCheckboxes.storage.checked || 
             !this.consentCheckboxes.training.checked || 
             !this.consentCheckboxes.age.checked) {
-            return this._alert("Debes aceptar todos los puntos de consentimiento");
+            return this._alert("Debes aceptar todos los puntos de consentimiento ético.");
         }
         return true;
     }
 
     lockParticipantForm() {
-        this.participantData = {
-            alias: this.participantAlias.value.trim().toUpperCase(),
-            age: this.participantAge.value,
-            region: this.participantRegion.value,
-            hand: this.participantHand.value,
-            level: this.participantLevel.value,
-            type: this.participantType.value
-        };
-
-        // Disable all inputs
-        [this.participantAlias, this.participantAge, this.participantRegion, 
-         this.participantHand, this.participantLevel, this.participantType, 
-         this.btnSaveParticipant, ...Object.values(this.consentCheckboxes)].forEach(el => el.disabled = true);
-
-        this.participantSavedMsg.classList.remove('hidden');
-        this.modeSelectorCard.classList.remove('hidden');
-        this.wordSelectorCard.classList.remove('hidden');
-       if (!localStorage.getItem('lsp_participant_profile')) {
-            this.protocolOverlay.classList.remove('hidden');
-        }
+        this.showAuthStep('active');
     }
 
     _alert(msg) {
@@ -527,6 +750,9 @@ export class UIController {
             if (rep < this.currentRepetition) c.classList.add('completed');
             if (rep === this.currentRepetition) c.classList.add('active');
         });
+        if (this.currentRepetition > 10 && this.currentWord) {
+            this.durationLimitNote.textContent = "Completada: 10 de 10 repeticiones guardadas.";
+        }
     }
 
     setUploadingState() {
@@ -537,23 +763,13 @@ export class UIController {
         this.uploadProgressBarMobile.style.width = '50%';
     }
 
-    setFinishedState() {
+    setFinishedState(progress) {
         this.uploadProgressBar.style.width = '100%';
         this.uploadStatusUI.querySelector('.status-text').textContent = "¡Subida exitosa!";
         this.uploadProgressBarMobile.style.width = '100%';
         
-        this.currentRepetition++;
-        
-        if (this.currentRepetition > 5) {
-            this.currentRepetition = 1; 
-            this.saveRepetitionProgress(); // Persistir el reinicio a 1 en localStorage para destrabarlo
-            this.wordSelect.value = "";
-            this.currentWord = null;
-            this.promptInstructions.classList.add('hidden');
-        } else {
-            this.saveRepetitionProgress(); // Persistir el progreso incremental normal
-        }
-        
+        this.applyProgress(progress || {});
+        this.loadRepetitionProgress();
         this.updateRepetitionUI();
         this.hidePreview();
 
@@ -578,19 +794,21 @@ export class UIController {
 
         return {
             // Participant (Flattened and Mapped for GAS)
-            participant_id: localStorage.getItem('lsp_participant_uuid'),
+            participant_id: p.participant_id || localStorage.getItem('lsp_participant_uuid'),
+            participant_resume_code: p.temp_code || localStorage.getItem('lsp_participant_resume_code'),
+            email: p.email || (this.authEmail ? this.authEmail.value.trim() : ""),
             alias: p.alias,
             age: p.age,
             region: p.region,
-            dominant_hand: p.hand,
-            lsp_level: p.level,
-            participant_type: p.type,
+            dominant_hand: p.dominant_hand || p.hand,
+            lsp_level: p.lsp_level || p.level,
+            participant_type: p.participant_type || p.type,
 
             // Ethical Consent (Actual states + explicit age consent)
-            consent_research: this.consentCheckboxes.research.checked,
-            consent_training: this.consentCheckboxes.training.checked,
-            consent_storage: this.consentCheckboxes.storage.checked,
-            consent_age: this.consentCheckboxes.age.checked,
+            consent_research: Boolean(p.consent_research !== undefined ? p.consent_research : this.consentCheckboxes.research?.checked),
+            consent_training: Boolean(p.consent_training !== undefined ? p.consent_training : this.consentCheckboxes.training?.checked),
+            consent_storage: Boolean(p.consent_storage !== undefined ? p.consent_storage : this.consentCheckboxes.storage?.checked),
+            consent_age: Boolean(p.consent_age !== undefined ? p.consent_age : this.consentCheckboxes.age?.checked),
 
             // Capture Metadata
             capture_mode: mode,

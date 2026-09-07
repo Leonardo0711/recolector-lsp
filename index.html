@@ -120,63 +120,160 @@
                 </button>
             </div>
 
-            <!-- Card: Formulario de Participante (Una vez por sesión) -->
+            <!-- Card: Formulario de Participante / Autenticación -->
             <div class="card glass" id="participantCard">
                 <div class="card-header">
-                    <i class="fa-solid fa-user-pen"></i>
-                    <h2>Datos del Participante</h2>
+                    <i class="fa-solid fa-user-circle"></i>
+                    <h2 id="authCardTitle">Acceso de Participante</h2>
                 </div>
-                <div class="input-group">
-                    <input type="text" id="participantAlias" placeholder="Alias o Código (Ej. P001)" autocomplete="off">
-                    
-                    <div class="input-row-grid">
-                        <select id="participantAge">
-                            <option value="">Rango de Edad</option>
-                            <option value="child">Niño (0-12)</option>
-                            <option value="teen">Joven (13-17)</option>
-                            <option value="adult">Adulto (18-60)</option>
-                            <option value="senior">Senior (60+)</option>
-                        </select>
-                        <select id="participantRegion">
-                            <option value="">Región</option>
-                            <option value="lima">Lima / Callao</option>
-                            <option value="norte">Norte</option>
-                            <option value="sur">Sur</option>
-                            <option value="centro">Centro</option>
-                            <option value="selva">Selva</option>
-                            <option value="extranjero">Extranjero</option>
-                        </select>
+                
+                <!-- PASO 1: INGRESO DE CORREO -->
+                <div id="authStepEmail" class="auth-step">
+                    <p class="auth-description">
+                        Ingresa tu correo para registrar tus señas y llevar el control de tu avance.
+                    </p>
+                    <div class="input-group">
+                        <label for="authEmail" class="input-label">Correo Electrónico</label>
+                        <div class="input-icon-wrapper">
+                            <i class="fa-solid fa-envelope input-icon"></i>
+                            <input type="email" id="authEmail" placeholder="tu.correo@ejemplo.com" autocomplete="email" required>
+                        </div>
+                        <button id="btnCheckEmail" class="btn btn-cta" type="button" style="width: 100%; margin-top: 10px;">
+                            <i class="fa-solid fa-arrow-right"></i> Continuar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PASO 2A: PRIMERA VEZ (Código temporal autorrellenado + Contraseña + Perfil) -->
+                <div id="authStepNewUser" class="auth-step hidden">
+                    <div class="temp-code-banner">
+                        <div class="temp-code-badge-row">
+                            <span class="badge-autofilled"><i class="fa-solid fa-circle-check"></i> Primera vez detectada</span>
+                        </div>
+                        <span class="badge-code-label">Código temporal generado:</span>
+                        <div class="temp-code-display">
+                            <code id="displayTempCode">LSP-0000</code>
+                            <span class="badge-tag"><i class="fa-solid fa-bolt"></i> Autorrellenado</span>
+                        </div>
+                        <small>Usa este código para activar tu cuenta y configurar tu contraseña definitiva.</small>
                     </div>
 
-                    <div class="input-row-grid">
-                        <select id="participantHand">
-                            <option value="">Mano Dominante</option>
-                            <option value="derecha">Derecha</option>
-                            <option value="izquierda">Izquierda</option>
-                            <option value="ambidiestro">Ambidiestro</option>
+                    <input type="hidden" id="authTempCode">
+
+                    <div class="input-group" style="margin-top: 14px;">
+                        <label class="input-label"><i class="fa-solid fa-key"></i> Crea tu Contraseña Definitiva</label>
+                        <div class="input-row-grid">
+                            <input type="password" id="authNewPassword" placeholder="Nueva contraseña" autocomplete="new-password">
+                            <input type="password" id="authConfirmPassword" placeholder="Confirmar contraseña" autocomplete="new-password">
+                        </div>
+
+                        <label class="input-label" style="margin-top: 10px;"><i class="fa-solid fa-address-card"></i> Datos Sociolingüísticos</label>
+                        <input type="text" id="participantAlias" placeholder="Tu Nombre o Alias (Ej. Carlos M. / P01)" autocomplete="name">
+                        
+                        <div class="input-row-grid">
+                            <select id="participantAge">
+                                <option value="">Rango de Edad</option>
+                                <option value="child">Niño (0-12)</option>
+                                <option value="teen">Joven (13-17)</option>
+                                <option value="adult">Adulto (18-60)</option>
+                                <option value="senior">Senior (60+)</option>
+                            </select>
+                            <select id="participantRegion">
+                                <option value="">Región</option>
+                                <option value="lima">Lima / Callao</option>
+                                <option value="norte">Norte</option>
+                                <option value="sur">Sur</option>
+                                <option value="centro">Centro</option>
+                                <option value="selva">Selva</option>
+                                <option value="extranjero">Extranjero</option>
+                            </select>
+                        </div>
+
+                        <div class="input-row-grid">
+                            <select id="participantHand">
+                                <option value="">Mano Dominante</option>
+                                <option value="derecha">Derecha</option>
+                                <option value="izquierda">Izquierda</option>
+                                <option value="ambidiestro">Ambidiestro</option>
+                            </select>
+                            <select id="participantLevel">
+                                <option value="">Nivel LSP</option>
+                                <option value="basico">Básico</option>
+                                <option value="intermedio">Intermedio</option>
+                                <option value="avanzado">Avanzado / Nativo</option>
+                            </select>
+                        </div>
+
+                        <select id="participantType">
+                            <option value="">Tipo de Participante</option>
+                            <option value="nativo">Usuario Nativo (Sordo)</option>
+                            <option value="interprete">Intérprete</option>
+                            <option value="estudiante">Estudiante</option>
+                            <option value="otro">Otro / Familiar</option>
                         </select>
-                        <select id="participantLevel">
-                            <option value="">Nivel LSP</option>
-                            <option value="basico">Básico</option>
-                            <option value="intermedio">Intermedio</option>
-                            <option value="avanzado">Avanzado / Nativo</option>
-                        </select>
+
+                        <button id="btnCompleteRegistration" class="btn btn-cta" type="button" style="width: 100%; margin-top: 12px;">
+                            <i class="fa-solid fa-user-check"></i> Activar Cuenta y Continuar
+                        </button>
+                        <button id="btnBackToEmailNew" class="btn btn-secondary btn-sm" type="button" style="width: 100%; margin-top: 6px;">
+                            <i class="fa-solid fa-arrow-left"></i> Cambiar correo
+                        </button>
                     </div>
+                </div>
 
-                    <select id="participantType">
-                        <option value="">Tipo de Participante</option>
-                        <option value="nativo">Usuario Nativo (Sordo)</option>
-                        <option value="interprete">Intérprete</option>
-                        <option value="estudiante">Estudiante</option>
-                        <option value="otro">Otro / Familiar</option>
-                    </select>
+                <!-- PASO 2B: USUARIO RECURRENTE (Pide Contraseña) -->
+                <div id="authStepReturningUser" class="auth-step hidden">
+                    <div class="welcome-user-banner">
+                        <i class="fa-solid fa-hand-peace"></i>
+                        <div>
+                            <p>¡Hola de nuevo, <strong id="greetingAlias">Participante</strong>!</p>
+                            <small id="greetingEmail">correo@ejemplo.com</small>
+                        </div>
+                    </div>
+                    <div class="input-group" style="margin-top: 12px;">
+                        <label for="authLoginPassword" class="input-label">Ingresa tu Contraseña Definitiva</label>
+                        <div class="input-icon-wrapper">
+                            <i class="fa-solid fa-lock input-icon"></i>
+                            <input type="password" id="authLoginPassword" placeholder="Contraseña" autocomplete="current-password">
+                        </div>
+                        <button id="btnLogin" class="btn btn-cta" type="button" style="width: 100%; margin-top: 10px;">
+                            <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
+                        </button>
+                        <button id="btnBackToEmailReturning" class="btn btn-secondary btn-sm" type="button" style="width: 100%; margin-top: 6px;">
+                            <i class="fa-solid fa-arrow-left"></i> Usar otro correo
+                        </button>
+                    </div>
+                </div>
 
-                    <button id="btnSaveParticipant" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">
-                        <i class="fa-solid fa-check-double"></i> Confirmar Datos
-                    </button>
-                    <small id="participantSavedMsg" class="hidden text-success">
-                        <i class="fa-solid fa-lock"></i> Datos bloqueados para esta sesión.
-                    </small>
+                <!-- ESTADO 3: SESIÓN ACTIVA -->
+                <div id="authStepActiveSession" class="auth-step hidden">
+                    <div class="active-profile-card">
+                        <div class="profile-header">
+                            <div class="profile-avatar">
+                                <i class="fa-solid fa-user-check"></i>
+                            </div>
+                            <div class="profile-info">
+                                <h3 id="activeProfileAlias">Carlos M.</h3>
+                                <p id="activeProfileEmail">correo@ejemplo.com</p>
+                                <span class="badge-role" id="activeProfileRole">Participante</span>
+                            </div>
+                        </div>
+                        <div class="profile-meta-grid">
+                            <div><span>Mano:</span> <strong id="activeProfileHand">Derecha</strong></div>
+                            <div><span>Nivel:</span> <strong id="activeProfileLevel">Intermedio</strong></div>
+                            <div><span>Región:</span> <strong id="activeProfileRegion">Lima</strong></div>
+                        </div>
+
+                        <div id="adminPanelQuickLink" class="admin-quick-link hidden" style="margin-top: 12px;">
+                            <button id="btnGoToAdmin" class="btn btn-admin" type="button" style="width: 100%;">
+                                <i class="fa-solid fa-shield-halved"></i> Ir al Panel Admin (#admin)
+                            </button>
+                        </div>
+
+                        <button id="btnLogout" class="btn btn-secondary btn-sm" type="button" style="width: 100%; margin-top: 12px;">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión
+                        </button>
+                    </div>
                 </div>
             </div>
 

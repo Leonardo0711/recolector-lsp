@@ -18,10 +18,50 @@ export class DriveUploader {
         const base64Video = await this._blobToBase64(videoBlob);
 
         const payload = {
+            action: "uploadSample",
             metadata: metadata,
             videoBase64: base64Video
         };
 
+        return this._post(payload);
+    }
+
+    async checkParticipantEmail(email) {
+        return this._post({ action: "checkParticipantEmail", email });
+    }
+
+    async completeFirstTimeRegistration(email, tempCode, password, profile) {
+        return this._post({
+            action: "completeFirstTimeRegistration",
+            email: email,
+            temp_code: tempCode,
+            password: password,
+            profile: profile
+        });
+    }
+
+    async loginParticipant(email, password) {
+        return this._post({
+            action: "loginParticipant",
+            email: email,
+            password: password
+        });
+    }
+
+    async registerParticipant(participant) {
+        return this._post({ action: "registerParticipant", participant });
+    }
+
+    async resumeParticipant(participantId, resumeCode) {
+        return this._post({
+            action: "getParticipantProgress",
+            participant_id: participantId,
+            resume_code: resumeCode
+        });
+    }
+
+    async _post(payload) {
+        if (!this.hasUrl()) throw new Error("Google Apps Script URL no configurada.");
         try {
             const response = await fetch(this.gasUrl, {
                 method: "POST",

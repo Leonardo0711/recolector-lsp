@@ -7,6 +7,14 @@ function getSpreadsheetId() {
   return PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID") || "ID_DE_SPREADSHEET_AQUI";
 }
 
+const MAX_REPETITIONS = 10;
+const ALLOWED_ISOLATED_LABEL_IDS = [
+  "L001", "L002", "L003", "L004", "L005", "L006", "L007", "L008", "L009", "L010",
+  "L022", "L023", "L024", "L025", "L026", "L033", "L034", "L035", "L040", "L046",
+  "L047", "L049", "L050", "L174", "L175", "L051", "L052", "L053", "L054", "L055",
+  "L058", "L062", "L063", "L076", "L078", "L081", "L087", "L088", "L065", "L067"
+];
+
 /**
  * Maneja peticiones de lectura (GET) - Reservado solo para healthCheck/ping
  */
@@ -33,6 +41,31 @@ function doPost(e) {
     
     const payload = JSON.parse(e.postData.contents);
     const action = payload.action;
+
+    // --- AUTENTICACIÓN POR CORREO, CÓDIGO TEMPORAL Y CONTRASEÑA ---
+    if (action === "checkParticipantEmail") {
+      return checkParticipantEmail(payload.email);
+    }
+
+    if (action === "completeFirstTimeRegistration") {
+      return completeFirstTimeRegistration(payload);
+    }
+
+    if (action === "loginParticipant") {
+      return loginParticipant(payload);
+    }
+
+    if (action === "registerParticipant") {
+      return registerParticipant(payload.participant || {});
+    }
+
+    if (action === "getParticipantProgress") {
+      const participant = assertParticipantAccess(payload.participant_id, payload.resume_code);
+      return successResponse({
+        participant: participant,
+        progress: getParticipantProgress(participant.participant_id)
+      });
+    }
     
     // --- ACCIÓN PÚBLICA: subida de participante (no requiere login) ---
     if (!action || action === "uploadSample") {
@@ -42,13 +75,32 @@ function doPost(e) {
           const metadata = payload.metadata;
           const videoBase64 = payload.videoBase64;
 
+          assertParticipantAccess(metadata.participant_id, metadata.participant_resume_code);
+          delete metadata.participant_resume_code;
+
           const validationError = validatePayload(metadata, videoBase64);
           if (validationError) {
             return errorResponse(validationError);
           }
 
+          const duplicate = findSampleByCaptureId(metadata.capture_id);
+          if (duplicate) {
+            return successResponse({
+              message: "Esta captura ya fue guardada.",
+              sample_id: duplicate.sample_id,
+              repetition: duplicate.repetition,
+              progress: getParticipantProgress(metadata.participant_id)
+            });
+          }
+
+          const completedCount = getCompletedCount(metadata.participant_id, metadata.label_id);
+          if (completedCount >= MAX_REPETITIONS) {
+            return errorResponse("Esta seña ya alcanzó las 10 repeticiones permitidas.");
+          }
+
           const sampleId = generateSampleId();
           metadata.sample_id = sampleId;
+          metadata.repetition = completedCount + 1;
           metadata.annotation_status = "pendiente";
           metadata.split = "unassigned";
 
@@ -105,7 +157,9 @@ function doPost(e) {
           return successResponse({
             message: "Muestra guardada exitosamente",
             sample_id: sampleId,
-            mode: mode
+            mode: mode,
+            repetition: metadata.repetition,
+            progress: getParticipantProgress(metadata.participant_id)
           });
         } finally {
           lock.releaseLock();
@@ -775,12 +829,353 @@ function doPost(e) {
 }
 
 /**
+ * Crea o actualiza el perfil de un participante y registra un código de
+ * reanudación de alta entropía. No se usan correos ni contraseñas.
+ */
+function registerParticipant(p) {
+  if (!p.participant_id || !p.resume_code) {
+    return errorResponse("Falta identificador o código de reanudación.");
+  }
+  if (!p.alias || !p.age || !p.region || !p.dominant_hand || !p.lsp_level || !p.participant_type) {
+    return errorResponse("Faltan datos obligatorios del participante.");
+  }
+
+  const ss = SpreadsheetApp.openById(getSpreadsheetId());
+  const sheet = getOrCreateSheet(ss, "participants");
+  const headers = participantHeaders();
+  syncHeaders(sheet, headers);
+  const existingRow = findRowIndexByKey(sheet, "participant_id", p.participant_id);
+  const existing = existingRow === -1 ? null : sheetToObjects(sheet).find(row => row.participant_id === p.participant_id);
+
+  if (existing && existing.resume_code_hash && existing.resume_code_hash !== hashResumeCode(p.resume_code)) {
+    return errorResponse("Ese identificador ya está registrado. Usa el código de reanudación correcto.");
+  }
+
+  const participant = {
+    participant_id: p.participant_id,
+    alias: p.alias,
+    age: p.age,
+    region: p.region,
+    dominant_hand: p.dominant_hand,
+    lsp_level: p.lsp_level,
+    participant_type: p.participant_type,
+    resume_code_hash: hashResumeCode(p.resume_code),
+    participant_registered_at: existing && existing.participant_registered_at ? existing.participant_registered_at : new Date().toISOString()
+  };
+  upsertRow(sheet, "participant_id", participant.participant_id, participant);
+  return successResponse({
+    participant: participant,
+    progress: getParticipantProgress(participant.participant_id),
+    is_new: !existing
+  });
+}
+
+function getBootstrapAdminEmail() {
+  const props = PropertiesService.getScriptProperties();
+  return (props.getProperty("BOOTSTRAP_ADMIN_EMAIL") || "leonardo.caballero.h@uni.pe").toLowerCase().trim();
+}
+
+function participantHeaders() {
+  return [
+    "participant_id", "alias", "age", "region", "dominant_hand", "lsp_level", "participant_type",
+    "consent_research", "consent_training", "consent_storage", "consent_age", "email", "resume_code_hash",
+    "participant_registered_at", "last_label_id", "last_capture_at"
+  ];
+}
+
+function hashResumeCode(value) {
+  if (!value) return "";
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, value.toString().trim(), Utilities.Charset.UTF_8)
+    .map(function(byte) { return (byte + 256).toString(16).slice(-2); })
+    .join("");
+}
+
+function hashPasswordWithSalt(password, salt) {
+  const combined = (salt || "") + "::" + (password || "").toString().trim();
+  const rawHash = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, combined, Utilities.Charset.UTF_8);
+  return rawHash.map(function(byte) {
+    const v = byte < 0 ? byte + 256 : byte;
+    return v.toString(16).padStart(2, '0');
+  }).join('');
+}
+
+/**
+ * Consulta si el correo existe o genera código de activación para el primer ingreso
+ */
+function checkParticipantEmail(email) {
+  if (!email || !email.includes("@")) {
+    return errorResponse("Por favor ingresa un correo electrónico válido.");
+  }
+  const cleanEmail = email.toLowerCase().trim();
+  const ss = SpreadsheetApp.openById(getSpreadsheetId());
+  const authSheet = getOrCreateSheet(ss, "participant_auth");
+  const users = sheetToObjects(authSheet);
+  const existing = users.find(function(u) { return (u.email || "").toString().toLowerCase().trim() === cleanEmail; });
+
+  if (existing) {
+    const mustChange = existing.must_change_password === true || existing.must_change_password === "true" || !existing.password_hash;
+    return successResponse({
+      exists: true,
+      is_new: false,
+      must_change_password: mustChange,
+      temp_code: mustChange ? (existing.temp_code || "") : "",
+      alias: existing.alias || "",
+      participant_id: existing.participant_id
+    });
+  }
+
+  // Nuevo usuario: generar código temporal de 4 dígitos (ej: LSP-7492)
+  const tempCode = "LSP-" + Math.floor(1000 + Math.random() * 9000);
+  const participantId = "P-" + Date.now().toString().slice(-4) + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
+  const isAdmin = cleanEmail === getBootstrapAdminEmail();
+
+  const newRecord = {
+    participant_id: participantId,
+    email: cleanEmail,
+    password_hash: "",
+    salt: "",
+    temp_code: tempCode,
+    must_change_password: true,
+    role: isAdmin ? "admin" : "participant",
+    status: "active",
+    created_at: new Date().toISOString(),
+    last_login: "",
+    alias: ""
+  };
+
+  upsertRow(authSheet, "email", cleanEmail, newRecord);
+
+  // Si coincide con el correo de admin, garantizar registro en users
+  if (isAdmin) {
+    const usersSheet = getOrCreateSheet(ss, "users");
+    const adminProps = PropertiesService.getScriptProperties();
+    const adminCode = adminProps.getProperty("BOOTSTRAP_ADMIN_CODE") || "goLSP07$";
+    upsertRow(usersSheet, "email", cleanEmail, {
+      user_id: participantId,
+      email: cleanEmail,
+      alias: "System Admin",
+      role: "admin",
+      status: "active",
+      created_at: new Date().toISOString(),
+      access_code: adminCode
+    });
+  }
+
+  logAudit("", "", participantId, "checkEmail_generateTempCode", "", "temp_code_generated", "Generado código temporal para " + cleanEmail);
+
+  return successResponse({
+    exists: false,
+    is_new: true,
+    must_change_password: true,
+    temp_code: tempCode,
+    participant_id: participantId
+  });
+}
+
+/**
+ * Completa el registro de primera vez: valida temp_code, guarda contraseña definitiva y datos del perfil
+ */
+function completeFirstTimeRegistration(payload) {
+  const email = (payload.email || "").toLowerCase().trim();
+  const tempCode = (payload.temp_code || "").toString().trim();
+  const password = (payload.password || "").toString().trim();
+  const profile = payload.profile || {};
+
+  if (!email || !email.includes("@")) return errorResponse("Correo inválido.");
+  if (!tempCode) return errorResponse("Falta código de activación temporal.");
+  if (!password || password.length < 4) return errorResponse("La contraseña debe tener al menos 4 caracteres.");
+  if (!profile.alias || !profile.age || !profile.region || !profile.dominant_hand || !profile.lsp_level || !profile.participant_type) {
+    return errorResponse("Por favor completa todos los datos sociolingüísticos obligatorios.");
+  }
+
+  const ss = SpreadsheetApp.openById(getSpreadsheetId());
+  const authSheet = getOrCreateSheet(ss, "participant_auth");
+  const users = sheetToObjects(authSheet);
+  const existing = users.find(function(u) { return (u.email || "").toString().toLowerCase().trim() === email; });
+
+  if (!existing) {
+    return errorResponse("Usuario no encontrado. Inicia nuevamente con tu correo.");
+  }
+
+  if ((existing.temp_code || "").toString().trim() !== tempCode) {
+    return errorResponse("El código de activación no coincide.");
+  }
+
+  const salt = Math.random().toString(36).substring(2, 10);
+  const passwordHash = hashPasswordWithSalt(password, salt);
+
+  const updatedAuth = {
+    ...existing,
+    password_hash: passwordHash,
+    salt: salt,
+    temp_code: "",
+    must_change_password: false,
+    alias: profile.alias,
+    last_login: new Date().toISOString()
+  };
+  upsertRow(authSheet, "email", email, updatedAuth);
+
+  const partSheet = getOrCreateSheet(ss, "participants");
+  const fullParticipant = {
+    participant_id: existing.participant_id,
+    alias: profile.alias,
+    age: profile.age,
+    region: profile.region,
+    dominant_hand: profile.dominant_hand,
+    lsp_level: profile.lsp_level,
+    participant_type: profile.participant_type,
+    consent_research: profile.consent_research !== false,
+    consent_training: profile.consent_training !== false,
+    consent_storage: profile.consent_storage !== false,
+    consent_age: profile.consent_age !== false,
+    email: email,
+    participant_registered_at: existing.created_at || new Date().toISOString()
+  };
+  upsertRow(partSheet, "participant_id", existing.participant_id, fullParticipant);
+
+  logAudit("", "", existing.participant_id, "firstTimeRegistration", "pending", "active", "Registro completado para " + email);
+
+  return successResponse({
+    message: "Registro completado con éxito.",
+    participant: fullParticipant,
+    progress: getParticipantProgress(existing.participant_id),
+    role: updatedAuth.role || "participant"
+  });
+}
+
+/**
+ * Inicia sesión para un participante ya registrado con su contraseña definitiva
+ */
+function loginParticipant(payload) {
+  const email = (payload.email || "").toLowerCase().trim();
+  const password = (payload.password || "").toString().trim();
+
+  if (!email || !password) return errorResponse("Falta correo o contraseña.");
+
+  const ss = SpreadsheetApp.openById(getSpreadsheetId());
+  const authSheet = getOrCreateSheet(ss, "participant_auth");
+  const users = sheetToObjects(authSheet);
+  const existing = users.find(function(u) { return (u.email || "").toString().toLowerCase().trim() === email; });
+
+  if (!existing) {
+    return errorResponse("Este correo no está registrado. Escribe tu correo para registrarte por primera vez.");
+  }
+
+  if (existing.must_change_password === true || existing.must_change_password === "true" || !existing.password_hash) {
+    return errorResponse("Tu cuenta requiere activación con contraseña inicial.", {
+      must_change_password: true,
+      temp_code: existing.temp_code || ""
+    });
+  }
+
+  const checkHash = hashPasswordWithSalt(password, existing.salt);
+  if (checkHash !== existing.password_hash) {
+    return errorResponse("Contraseña incorrecta.");
+  }
+
+  upsertRow(authSheet, "email", email, {
+    email: email,
+    last_login: new Date().toISOString()
+  });
+
+  const partSheet = ss.getSheetByName("participants");
+  let participantData = null;
+  if (partSheet) {
+    const parts = sheetToObjects(partSheet);
+    participantData = parts.find(function(p) { return p.participant_id === existing.participant_id; });
+  }
+
+  if (!participantData) {
+    participantData = {
+      participant_id: existing.participant_id,
+      alias: existing.alias || email.split("@")[0],
+      email: email
+    };
+  }
+
+  logAudit("", "", existing.participant_id, "loginParticipant", "", "active", "Login exitoso para " + email);
+
+  return successResponse({
+    message: "Inicio de sesión exitoso.",
+    participant: participantData,
+    progress: getParticipantProgress(existing.participant_id),
+    role: existing.role || "participant"
+  });
+}
+
+function assertParticipantAccess(participantId, resumeCode) {
+  if (!participantId) throw new Error("Falta identificador de participante.");
+  const ss = SpreadsheetApp.openById(getSpreadsheetId());
+  
+  // 1. Verificar si está en participant_auth
+  const authSheet = ss.getSheetByName("participant_auth");
+  if (authSheet) {
+    const authUsers = sheetToObjects(authSheet);
+    const authUser = authUsers.find(function(u) { return u.participant_id === participantId; });
+    if (authUser) return authUser;
+  }
+
+  // 2. Fallback a participants
+  const sheet = ss.getSheetByName("participants");
+  if (!sheet) throw new Error("Participante no registrado.");
+  const participant = sheetToObjects(sheet).find(function(row) { return row.participant_id === participantId; });
+  if (!participant) throw new Error("Participante no encontrado.");
+  if (resumeCode && participant.resume_code_hash) {
+    if (participant.resume_code_hash !== hashResumeCode(resumeCode)) {
+      throw new Error("Código de reanudación incorrecto.");
+    }
+  }
+  return participant;
+}
+
+function getParticipantProgress(participantId) {
+  const ss = SpreadsheetApp.openById(getSpreadsheetId());
+  const samplesSheet = ss.getSheetByName("samples");
+  const participantSheet = ss.getSheetByName("participants");
+  const byLabel = {};
+  ALLOWED_ISOLATED_LABEL_IDS.forEach(function(labelId) { byLabel[labelId] = 0; });
+
+  if (samplesSheet) {
+    sheetToObjects(samplesSheet).forEach(function(sample) {
+      if (sample.participant_id !== participantId || sample.capture_mode !== "isolated") return;
+      if (sample.failed_capture === true || sample.failed_capture === "true") return;
+      if (byLabel[sample.label_id] !== undefined) byLabel[sample.label_id]++;
+    });
+  }
+
+  const participant = participantSheet
+    ? sheetToObjects(participantSheet).find(function(row) { return row.participant_id === participantId; })
+    : null;
+  return {
+    by_label: byLabel,
+    last_label_id: participant && participant.last_label_id ? participant.last_label_id : "",
+    completed_samples: Object.keys(byLabel).reduce(function(sum, labelId) { return sum + byLabel[labelId]; }, 0),
+    target_samples: ALLOWED_ISOLATED_LABEL_IDS.length * MAX_REPETITIONS
+  };
+}
+
+function getCompletedCount(participantId, labelId) {
+  return getParticipantProgress(participantId).by_label[labelId] || 0;
+}
+
+function findSampleByCaptureId(captureId) {
+  if (!captureId) return null;
+  const ss = SpreadsheetApp.openById(getSpreadsheetId());
+  const sheet = ss.getSheetByName("samples");
+  if (!sheet) return null;
+  return sheetToObjects(sheet).find(function(sample) { return sample.capture_id === captureId; }) || null;
+}
+
+/**
  * Validaciones del payload de subida del grabador público
  */
 function validatePayload(m, video) {
   if (!m.participant_id) return "Falta participant_id";
   if (!m.capture_mode) return "Falta capture_mode";
   if (!m.prompt_id) return "Falta prompt_id";
+  if (m.capture_mode !== "isolated") return "El protocolo vigente solo acepta señas aisladas.";
+  if (!ALLOWED_ISOLATED_LABEL_IDS.includes(m.label_id)) return "La seña seleccionada no pertenece al vocabulario de 40 clases.";
+  if (!m.capture_id) return "Falta identificador de captura.";
   
   if (!m.consent_research) return "Falta consentimiento: investigación";
   if (!m.consent_training) return "Falta consentimiento: entrenamiento";
@@ -872,7 +1267,7 @@ function updateMasterSheets(m) {
   
   const samplesSheet = getOrCreateSheet(ss, "samples");
   const sampleHeaders = [
-    "sample_id", "participant_id", "session_id", "capture_mode", 
+    "sample_id", "capture_id", "participant_id", "session_id", "capture_mode", 
     "label_id", "label", "prompt_id", "prompt_text", 
     "produced_text_es", "produced_text_es_normalized", "gloss_reference",
     "repetition", "capture_datetime", "duration_sec", "width", "height",
@@ -888,15 +1283,16 @@ function updateMasterSheets(m) {
   upsertRow(samplesSheet, "sample_id", m.sample_id, m);
 
   const participantsSheet = getOrCreateSheet(ss, "participants");
-  const partHeaders = [
-    "participant_id", "alias", "age", "region", "dominant_hand", 
-    "lsp_level", "participant_type", "consent_research", "consent_training", "consent_storage", "consent_age"
-  ];
+  const partHeaders = participantHeaders();
   if (participantsSheet.getLastRow() === 0) {
     participantsSheet.appendRow(partHeaders);
   }
   
-  upsertRow(participantsSheet, "participant_id", m.participant_id, m);
+  upsertRow(participantsSheet, "participant_id", m.participant_id, {
+    ...m,
+    last_label_id: m.label_id,
+    last_capture_at: m.capture_datetime
+  });
 }
 
 /**
@@ -915,7 +1311,7 @@ function initDatabase() {
   const auditHeaders = ["audit_id", "sample_id", "annotation_id", "user_id", "action", "old_status", "new_status", "timestamp", "notes"];
   
   const samplesHeaders = [
-    "sample_id", "participant_id", "session_id", "capture_mode", 
+    "sample_id", "capture_id", "participant_id", "session_id", "capture_mode", 
     "label_id", "label", "prompt_id", "prompt_text", 
     "produced_text_es", "produced_text_es_normalized", "gloss_reference",
     "repetition", "capture_datetime", "duration_sec", "width", "height",
@@ -936,6 +1332,16 @@ function initDatabase() {
 
   const samplesSheet = getOrCreateSheet(ss, "samples");
   syncHeaders(samplesSheet, samplesHeaders);
+
+  const participantAuthHeaders = [
+    "participant_id", "email", "password_hash", "salt", "temp_code", 
+    "must_change_password", "role", "status", "created_at", "last_login", "alias"
+  ];
+  const participantAuthSheet = getOrCreateSheet(ss, "participant_auth");
+  syncHeaders(participantAuthSheet, participantAuthHeaders);
+
+  const participantsSheet = getOrCreateSheet(ss, "participants");
+  syncHeaders(participantsSheet, participantHeaders());
 
   const users = sheetToObjects(usersSheet);
   const hasAdmin = users.some(u => u.role === "admin" && u.status === "active");
