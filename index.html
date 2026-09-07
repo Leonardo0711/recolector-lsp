@@ -24,13 +24,15 @@
     <!-- ==================== LANDING / HERO ==================== -->
     <section class="landing" id="landing">
         <header class="landing-header">
-            <!-- <button class="btn btn-secondary btn-admin-trigger" id="btnAdminPanel" title="Panel de Administración y Anotación">
-                <i class="fa-solid fa-user-shield"></i> Panel Admin
-            </button> -->
-            <button class="theme-switch" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">
-                <span class="switch-stars"></span>
-                <span class="switch-knob"><i class="fa-solid fa-moon theme-icon"></i></span>
-            </button>
+            <div class="landing-header-actions">
+                <button class="btn btn-secondary btn-sm" id="btnLandingLogin" type="button">
+                    <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
+                </button>
+                <button class="theme-switch" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">
+                    <span class="switch-stars"></span>
+                    <span class="switch-knob"><i class="fa-solid fa-moon theme-icon"></i></span>
+                </button>
+            </div>
         </header>
         <div class="landing-content">
             <div class="landing-badge">
@@ -100,51 +102,53 @@
             </p>
         </div>
     </section>
+ 
+    <!-- ==================== PANTALLA EXCLUSIVA DE LOGIN & ACTIVACIÓN ==================== -->
+    <section class="auth-view hidden" id="authView">
+        <header class="auth-header">
+            <button class="btn btn-secondary btn-sm" id="btnBackToLandingFromAuth" type="button">
+                <i class="fa-solid fa-arrow-left"></i> Volver a la Portada
+            </button>
+            <button class="theme-switch auth-theme-switch" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">
+                <span class="switch-stars"></span>
+                <span class="switch-knob"><i class="fa-solid fa-moon theme-icon"></i></span>
+            </button>
+        </header>
 
-    <!-- ==================== APP (Grabador) — OCULTO AL INICIO ==================== -->
-    <main class="app-container hidden" id="appContainer">
+        <div class="auth-card-wrapper">
+            <div class="card glass auth-card" id="authCard">
+                <div class="auth-brand-header">
+                    <div class="brand-icon-circle">
+                        <i class="fa-solid fa-hands-asl-interpreting"></i>
+                    </div>
+                    <h2>DataCollect <span class="gradient-text">LSP</span></h2>
+                    <p class="auth-brand-subtitle">Plataforma Científica de Recolección de Lengua de Señas Peruano</p>
+                </div>
 
-        <!-- SIDEBAR (Desktop) -->
-        <aside class="sidebar" id="sidebar">
-            <div class="brand">
-                <div class="brand-icon">
-                    <i class="fa-solid fa-hands-asl-interpreting"></i>
-                </div>
-                <div>
-                    <h1>DataCollect <span>LSP</span></h1>
-                    <p class="brand-subtitle">Lenguaje de Señas Peruano</p>
-                </div>
-                <button class="theme-switch app-theme-switch" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">
-                    <span class="switch-stars"></span>
-                    <span class="switch-knob"><i class="fa-solid fa-moon theme-icon"></i></span>
-                </button>
-            </div>
-
-            <!-- Card: Formulario de Participante / Autenticación -->
-            <div class="card glass" id="participantCard">
-                <div class="card-header">
-                    <i class="fa-solid fa-user-circle"></i>
-                    <h2 id="authCardTitle">Acceso de Participante</h2>
-                </div>
-                
                 <!-- PASO 1: INGRESO DE CORREO -->
                 <div id="authStepEmail" class="auth-step">
-                    <p class="auth-description">
-                        Ingresa tu correo para registrar tus señas y llevar el control de tu avance.
-                    </p>
-                    <div class="input-group">
-                        <label for="authEmail" class="input-label">Correo Electrónico</label>
+                    <div class="auth-step-intro">
+                        <i class="fa-solid fa-envelope-open-text step-intro-icon"></i>
+                        <div>
+                            <h3 class="auth-step-title">Ingresa tu Correo</h3>
+                            <p class="auth-description">
+                                Escribe tu correo para registrar tus señas y llevar el control exacto de tu avance.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="input-group" style="margin-top: 16px;">
+                        <label for="authEmail" class="input-label">Correo Electrónico (Personal o Institucional)</label>
                         <div class="input-icon-wrapper">
                             <i class="fa-solid fa-envelope input-icon"></i>
                             <input type="email" id="authEmail" placeholder="tu.correo@ejemplo.com" autocomplete="email" required>
                         </div>
-                        <button id="btnCheckEmail" class="btn btn-cta" type="button" style="width: 100%; margin-top: 10px;">
+                        <button id="btnCheckEmail" class="btn btn-cta" type="button" style="width: 100%; margin-top: 16px;">
                             <i class="fa-solid fa-arrow-right"></i> Continuar
                         </button>
                     </div>
                 </div>
 
-                <!-- PASO 2A: PRIMERA VEZ (Código temporal autorrellenado + Contraseña + Perfil) -->
+                <!-- PASO 2A: PRIMERA VEZ (Código temporal autorrellenado + Contraseña + Perfil + Consentimiento ético único) -->
                 <div id="authStepNewUser" class="auth-step hidden">
                     <div class="temp-code-banner">
                         <div class="temp-code-badge-row">
@@ -155,19 +159,19 @@
                             <code id="displayTempCode">LSP-0000</code>
                             <span class="badge-tag"><i class="fa-solid fa-bolt"></i> Autorrellenado</span>
                         </div>
-                        <small>Usa este código para activar tu cuenta y configurar tu contraseña definitiva.</small>
+                        <small>El código ya fue validado y autorrellenado. Configura tu contraseña definitiva y completa tu perfil.</small>
                     </div>
 
                     <input type="hidden" id="authTempCode">
 
-                    <div class="input-group" style="margin-top: 14px;">
+                    <div class="input-group" style="margin-top: 16px;">
                         <label class="input-label"><i class="fa-solid fa-key"></i> Crea tu Contraseña Definitiva</label>
                         <div class="input-row-grid">
                             <input type="password" id="authNewPassword" placeholder="Nueva contraseña" autocomplete="new-password">
                             <input type="password" id="authConfirmPassword" placeholder="Confirmar contraseña" autocomplete="new-password">
                         </div>
 
-                        <label class="input-label" style="margin-top: 10px;"><i class="fa-solid fa-address-card"></i> Datos Sociolingüísticos</label>
+                        <label class="input-label" style="margin-top: 14px;"><i class="fa-solid fa-address-card"></i> Datos Sociolingüísticos</label>
                         <input type="text" id="participantAlias" placeholder="Tu Nombre o Alias (Ej. Carlos M. / P01)" autocomplete="name">
                         
                         <div class="input-row-grid">
@@ -212,10 +216,39 @@
                             <option value="otro">Otro / Familiar</option>
                         </select>
 
-                        <button id="btnCompleteRegistration" class="btn btn-cta" type="button" style="width: 100%; margin-top: 12px;">
-                            <i class="fa-solid fa-user-check"></i> Activar Cuenta y Continuar
+                        <!-- CONSENTIMIENTO ÉTICO INFORMADO (ÚNICA VEZ) -->
+                        <div class="consent-onboarding-card">
+                            <div class="consent-onboarding-header">
+                                <i class="fa-solid fa-shield-halved"></i>
+                                <div>
+                                    <h4>Consentimiento Ético Informado</h4>
+                                    <small>Se solicita una única vez al activar tu cuenta para la tesis de grado</small>
+                                </div>
+                            </div>
+                            <div class="consent-group">
+                                <label class="consent-item">
+                                    <input type="checkbox" id="consentResearch" required>
+                                    <span>Autorizo el uso de mis grabaciones para investigación académica y tesis.</span>
+                                </label>
+                                <label class="consent-item">
+                                    <input type="checkbox" id="consentStorage" required>
+                                    <span>Autorizo el almacenamiento de videos en el repositorio seguro de Google Drive.</span>
+                                </label>
+                                <label class="consent-item">
+                                    <input type="checkbox" id="consentTraining" required>
+                                    <span>Autorizo el procesamiento y entrenamiento de modelos de Inteligencia Artificial.</span>
+                                </label>
+                                <label class="consent-item">
+                                    <input type="checkbox" id="consentAge" required>
+                                    <span>Confirmo ser mayor de edad o contar con autorización de mi apoderado.</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button id="btnCompleteRegistration" class="btn btn-cta" type="button" style="width: 100%; margin-top: 14px;">
+                            <i class="fa-solid fa-user-check"></i> Activar Cuenta y Comenzar
                         </button>
-                        <button id="btnBackToEmailNew" class="btn btn-secondary btn-sm" type="button" style="width: 100%; margin-top: 6px;">
+                        <button id="btnBackToEmailNew" class="btn btn-secondary btn-sm" type="button" style="width: 100%; margin-top: 8px;">
                             <i class="fa-solid fa-arrow-left"></i> Cambiar correo
                         </button>
                     </div>
@@ -230,76 +263,75 @@
                             <small id="greetingEmail">correo@ejemplo.com</small>
                         </div>
                     </div>
-                    <div class="input-group" style="margin-top: 12px;">
+                    <div class="input-group" style="margin-top: 16px;">
                         <label for="authLoginPassword" class="input-label">Ingresa tu Contraseña Definitiva</label>
                         <div class="input-icon-wrapper">
                             <i class="fa-solid fa-lock input-icon"></i>
                             <input type="password" id="authLoginPassword" placeholder="Contraseña" autocomplete="current-password">
                         </div>
-                        <button id="btnLogin" class="btn btn-cta" type="button" style="width: 100%; margin-top: 10px;">
-                            <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
+                        <button id="btnLogin" class="btn btn-cta" type="button" style="width: 100%; margin-top: 14px;">
+                            <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión y Continuar
                         </button>
-                        <button id="btnBackToEmailReturning" class="btn btn-secondary btn-sm" type="button" style="width: 100%; margin-top: 6px;">
+                        <button id="btnBackToEmailReturning" class="btn btn-secondary btn-sm" type="button" style="width: 100%; margin-top: 8px;">
                             <i class="fa-solid fa-arrow-left"></i> Usar otro correo
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
 
-                <!-- ESTADO 3: SESIÓN ACTIVA -->
-                <div id="authStepActiveSession" class="auth-step hidden">
-                    <div class="active-profile-card">
-                        <div class="profile-header">
-                            <div class="profile-avatar">
-                                <i class="fa-solid fa-user-check"></i>
-                            </div>
-                            <div class="profile-info">
-                                <h3 id="activeProfileAlias">Carlos M.</h3>
-                                <p id="activeProfileEmail">correo@ejemplo.com</p>
-                                <span class="badge-role" id="activeProfileRole">Participante</span>
-                            </div>
-                        </div>
-                        <div class="profile-meta-grid">
-                            <div><span>Mano:</span> <strong id="activeProfileHand">Derecha</strong></div>
-                            <div><span>Nivel:</span> <strong id="activeProfileLevel">Intermedio</strong></div>
-                            <div><span>Región:</span> <strong id="activeProfileRegion">Lima</strong></div>
-                        </div>
+    <!-- ==================== APP (Grabador) — OCULTO AL INICIO ==================== -->
+    <main class="app-container hidden" id="appContainer">
 
-                        <div id="adminPanelQuickLink" class="admin-quick-link hidden" style="margin-top: 12px;">
-                            <button id="btnGoToAdmin" class="btn btn-admin" type="button" style="width: 100%;">
-                                <i class="fa-solid fa-shield-halved"></i> Ir al Panel Admin (#admin)
-                            </button>
-                        </div>
-
-                        <button id="btnLogout" class="btn btn-secondary btn-sm" type="button" style="width: 100%; margin-top: 12px;">
-                            <i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión
-                        </button>
-                    </div>
+        <!-- SIDEBAR (Desktop) -->
+        <aside class="sidebar" id="sidebar">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-hands-asl-interpreting"></i>
                 </div>
+                <div>
+                    <h1>DataCollect <span>LSP</span></h1>
+                    <p class="brand-subtitle">Lenguaje de Señas Peruano</p>
+                </div>
+                <button class="theme-switch app-theme-switch" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">
+                    <span class="switch-stars"></span>
+                    <span class="switch-knob"><i class="fa-solid fa-moon theme-icon"></i></span>
+                </button>
             </div>
 
-            <!-- Card: Consentimiento (Obligatorio) -->
-            <div class="card glass" id="consentCard">
+            <!-- Card: Sesión Activa del Participante -->
+            <div class="card glass" id="activeSessionCard">
                 <div class="card-header">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    <h2>Consentimiento</h2>
+                    <i class="fa-solid fa-user-circle"></i>
+                    <h2>Participante Activo</h2>
                 </div>
-                <div class="consent-group">
-                    <label class="consent-item">
-                        <input type="checkbox" id="consentResearch">
-                        <span>Autorizo uso para investigación académica</span>
-                    </label>
-                    <label class="consent-item">
-                        <input type="checkbox" id="consentStorage">
-                        <span>Autorizo almacenamiento de videos en Drive</span>
-                    </label>
-                    <label class="consent-item">
-                        <input type="checkbox" id="consentTraining">
-                        <span>Autorizo procesamiento para modelos de IA</span>
-                    </label>
-                    <label class="consent-item">
-                        <input type="checkbox" id="consentAge">
-                        <span>Confirmo ser mayor de edad o tener permiso</span>
-                    </label>
+                <div class="active-profile-card">
+                    <div class="profile-header">
+                        <div class="profile-avatar">
+                            <i class="fa-solid fa-user-check"></i>
+                        </div>
+                        <div class="profile-info">
+                            <h3 id="activeProfileAlias">Participante</h3>
+                            <p id="activeProfileEmail">correo@ejemplo.com</p>
+                            <span class="badge-role" id="activeProfileRole">Participante</span>
+                        </div>
+                    </div>
+                    <div class="profile-meta-grid">
+                        <div><span>Mano:</span> <strong id="activeProfileHand">Derecha</strong></div>
+                        <div><span>Nivel:</span> <strong id="activeProfileLevel">Intermedio</strong></div>
+                        <div><span>Región:</span> <strong id="activeProfileRegion">Lima</strong></div>
+                    </div>
+
+                    <div id="adminPanelQuickLink" class="admin-quick-link hidden" style="margin-top: 12px;">
+                        <button id="btnGoToAdmin" class="btn btn-admin" type="button" style="width: 100%;">
+                            <i class="fa-solid fa-shield-halved"></i> Ir al Panel Admin (#admin)
+                        </button>
+                    </div>
+
+                    <button id="btnLogout" class="btn btn-secondary btn-sm" type="button" style="width: 100%; margin-top: 12px;">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión
+                    </button>
                 </div>
             </div>
 

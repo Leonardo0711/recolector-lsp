@@ -1,12 +1,16 @@
 export class UIController {
     constructor() {
+        // --- Views & Containers ---
+        this.landing = document.getElementById('landing');
+        this.authView = document.getElementById('authView');
+        this.appContainer = document.getElementById('appContainer');
+        this.btnBackToLandingFromAuth = document.getElementById('btnBackToLandingFromAuth');
+        this.activeSessionCard = document.getElementById('activeSessionCard');
+
         // --- Participant Auth Elements ---
-        this.participantCard = document.getElementById('participantCard');
-        this.authCardTitle = document.getElementById('authCardTitle');
         this.authStepEmail = document.getElementById('authStepEmail');
         this.authStepNewUser = document.getElementById('authStepNewUser');
         this.authStepReturningUser = document.getElementById('authStepReturningUser');
-        this.authStepActiveSession = document.getElementById('authStepActiveSession');
 
         this.authEmail = document.getElementById('authEmail');
         this.btnCheckEmail = document.getElementById('btnCheckEmail');
@@ -322,22 +326,28 @@ export class UIController {
         if (this.authStepEmail) this.authStepEmail.classList.add('hidden');
         if (this.authStepNewUser) this.authStepNewUser.classList.add('hidden');
         if (this.authStepReturningUser) this.authStepReturningUser.classList.add('hidden');
-        if (this.authStepActiveSession) this.authStepActiveSession.classList.add('hidden');
 
-        if (step === 'email' && this.authStepEmail) {
-            this.authStepEmail.classList.remove('hidden');
-            if (this.authCardTitle) this.authCardTitle.textContent = "Acceso de Participante";
-            this.wordSelectorCard.classList.add('hidden');
-        } else if (step === 'new' && this.authStepNewUser) {
-            this.authStepNewUser.classList.remove('hidden');
-            if (this.authCardTitle) this.authCardTitle.textContent = "Activar Cuenta (Primer Ingreso)";
-        } else if (step === 'returning' && this.authStepReturningUser) {
-            this.authStepReturningUser.classList.remove('hidden');
-            if (this.authCardTitle) this.authCardTitle.textContent = "Iniciar Sesión";
-        } else if (step === 'active' && this.authStepActiveSession) {
-            this.authStepActiveSession.classList.remove('hidden');
-            if (this.authCardTitle) this.authCardTitle.textContent = "Sesión Activa";
-            this.wordSelectorCard.classList.remove('hidden');
+        if (step === 'email') {
+            if (this.authStepEmail) this.authStepEmail.classList.remove('hidden');
+            if (this.authView) this.authView.classList.remove('hidden');
+            if (this.appContainer) this.appContainer.classList.add('hidden');
+            if (this.landing) this.landing.classList.add('hidden');
+        } else if (step === 'new') {
+            if (this.authStepNewUser) this.authStepNewUser.classList.remove('hidden');
+            if (this.authView) this.authView.classList.remove('hidden');
+            if (this.appContainer) this.appContainer.classList.add('hidden');
+            if (this.landing) this.landing.classList.add('hidden');
+        } else if (step === 'returning') {
+            if (this.authStepReturningUser) this.authStepReturningUser.classList.remove('hidden');
+            if (this.authView) this.authView.classList.remove('hidden');
+            if (this.appContainer) this.appContainer.classList.add('hidden');
+            if (this.landing) this.landing.classList.add('hidden');
+        } else if (step === 'active') {
+            if (this.authView) this.authView.classList.add('hidden');
+            if (this.landing) this.landing.classList.add('hidden');
+            if (this.appContainer) this.appContainer.classList.remove('hidden');
+            if (this.activeSessionCard) this.activeSessionCard.classList.remove('hidden');
+            if (this.wordSelectorCard) this.wordSelectorCard.classList.remove('hidden');
         }
     }
 
@@ -443,6 +453,13 @@ export class UIController {
         if (this.btnGoToAdmin) {
             this.btnGoToAdmin.addEventListener('click', () => {
                 window.location.hash = '#admin';
+            });
+        }
+
+        if (this.btnBackToLandingFromAuth) {
+            this.btnBackToLandingFromAuth.addEventListener('click', () => {
+                if (this.authView) this.authView.classList.add('hidden');
+                if (this.landing) this.landing.classList.remove('hidden');
             });
         }
 
@@ -586,7 +603,10 @@ export class UIController {
                 console.warn("Sesión inválida guardada:", e);
             }
         }
-        this.showAuthStep('email');
+        // Sin sesión activa previa: mostrar portada limpia
+        if (this.authView) this.authView.classList.add('hidden');
+        if (this.appContainer) this.appContainer.classList.add('hidden');
+        if (this.landing) this.landing.classList.remove('hidden');
     }
 
     saveParticipantToStorage() {

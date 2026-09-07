@@ -12,29 +12,46 @@ const themeCtrl = new ThemeController();
 document.addEventListener('DOMContentLoaded', () => {
     // --- Navigation Elements ---
     const landing = document.getElementById('landing');
+    const authView = document.getElementById('authView');
     const appContainer = document.getElementById('appContainer');
     const btnParticipar = document.getElementById('btnParticipar');
-    const btnBackToLanding = document.getElementById('btnBackToLanding');
+    const btnLandingLogin = document.getElementById('btnLandingLogin');
     const btnStartTour = document.getElementById('btnStartTour');
 
-    if (btnParticipar && landing && appContainer) {
-        btnParticipar.addEventListener('click', () => {
-            landing.classList.add('fade-out');
-            setTimeout(() => {
+    function navigateToAppOrLogin() {
+        const hasSession = !!localStorage.getItem('lsp_user_session');
+        if (landing) landing.classList.add('fade-out');
+        setTimeout(() => {
+            if (landing) {
                 landing.classList.add('hidden');
-                appContainer.classList.remove('hidden', 'fade-in');
-                appContainer.classList.add('fade-in');
+                landing.classList.remove('fade-out');
+            }
+            if (hasSession) {
+                if (authView) authView.classList.add('hidden');
+                if (appContainer) {
+                    appContainer.classList.remove('hidden', 'fade-in');
+                    appContainer.classList.add('fade-in');
+                }
                 setTimeout(() => TourManager.startTourAuto(), 400);
-            }, 350);
-        });
+            } else {
+                if (appContainer) appContainer.classList.add('hidden');
+                if (authView) {
+                    authView.classList.remove('hidden', 'fade-in');
+                    authView.classList.add('fade-in');
+                }
+                if (window.appInstance && window.appInstance.ui) {
+                    window.appInstance.ui.showAuthStep('email');
+                }
+            }
+        }, 300);
     }
 
-    if (btnBackToLanding && appContainer && landing) {
-        btnBackToLanding.addEventListener('click', () => {
-            appContainer.classList.remove('fade-in');
-            appContainer.classList.add('hidden');
-            landing.classList.remove('hidden', 'fade-out');
-        });
+    if (btnParticipar) {
+        btnParticipar.addEventListener('click', navigateToAppOrLogin);
+    }
+
+    if (btnLandingLogin) {
+        btnLandingLogin.addEventListener('click', navigateToAppOrLogin);
     }
 
     if (btnStartTour) {
@@ -50,11 +67,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleHashRoute() {
         const hash = window.location.hash;
         const landing = document.getElementById("landing");
+        const authView = document.getElementById("authView");
         const appContainer = document.getElementById("appContainer");
         const dashboardContainer = document.getElementById("dashboardContainer");
 
         if (hash === "#admin" || hash === "#/admin") {
             if (landing) landing.classList.add("hidden");
+            if (authView) authView.classList.add("hidden");
             if (appContainer) appContainer.classList.add("hidden");
             if (dashboardContainer) {
                 dashboardContainer.classList.remove("hidden");
@@ -62,12 +81,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.adminInstance) {
                 window.adminInstance.open();
             }
+        } else if (hash === "#login" || hash === "#/login") {
+            if (dashboardContainer) dashboardContainer.classList.add("hidden");
+            if (landing) landing.classList.add("hidden");
+            if (appContainer) appContainer.classList.add("hidden");
+            if (authView) {
+                authView.classList.remove("hidden");
+                if (window.appInstance && window.appInstance.ui) {
+                    window.appInstance.ui.showAuthStep('email');
+                }
+            }
         } else {
             if (dashboardContainer) {
                 dashboardContainer.classList.add("hidden");
             }
-            // Solo restaurar landing si ambos estaban ocultos (ej: venimos de admin)
-            if (landing && landing.classList.contains("hidden") && appContainer && appContainer.classList.contains("hidden")) {
+            const hasSession = !!localStorage.getItem('lsp_user_session');
+            if (hasSession && appContainer && !appContainer.classList.contains('hidden')) {
+                // Mantener sesión activa en el estudio
+            } else if (authView && !authView.classList.contains('hidden')) {
+                // Mantener pantalla de autenticación si está visible
+            } else if (landing && (!appContainer || appContainer.classList.contains("hidden"))) {
                 landing.classList.remove("hidden");
             }
         }
