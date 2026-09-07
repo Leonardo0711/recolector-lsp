@@ -67,6 +67,30 @@ export class AdminAnnotationManager {
             }
         }
 
+        // Si no hay sesión admin explícita, verificar si el usuario activo en la app principal es admin
+        if (!this.session) {
+            const userSessionStr = localStorage.getItem("lsp_user_session");
+            if (userSessionStr) {
+                try {
+                    const uSession = JSON.parse(userSessionStr);
+                    if (uSession && uSession.role === "admin") {
+                        const adminEmail = (uSession.participant && uSession.participant.email) || "leonardo.caballero.h@uni.pe";
+                        const adminAlias = (uSession.participant && uSession.participant.alias) || "Administrador";
+                        this.session = {
+                            email: adminEmail,
+                            accessCode: "admin_auto_auth",
+                            user: {
+                                alias: adminAlias,
+                                email: adminEmail,
+                                role: "admin"
+                            }
+                        };
+                        localStorage.setItem("lsp_admin_session", JSON.stringify(this.session));
+                    }
+                } catch (e) {}
+            }
+        }
+
         // Renderizar pantalla inicial
         this.render();
     }
@@ -75,6 +99,30 @@ export class AdminAnnotationManager {
      * Abre el panel ocultando las demás secciones de la app
      */
     open() {
+        // Asegurar sesión de admin activa si viene de la app
+        if (!this.session) {
+            const userSessionStr = localStorage.getItem("lsp_user_session");
+            if (userSessionStr) {
+                try {
+                    const uSession = JSON.parse(userSessionStr);
+                    if (uSession && uSession.role === "admin") {
+                        const adminEmail = (uSession.participant && uSession.participant.email) || "leonardo.caballero.h@uni.pe";
+                        const adminAlias = (uSession.participant && uSession.participant.alias) || "Administrador";
+                        this.session = {
+                            email: adminEmail,
+                            accessCode: "admin_auto_auth",
+                            user: {
+                                alias: adminAlias,
+                                email: adminEmail,
+                                role: "admin"
+                            }
+                        };
+                        localStorage.setItem("lsp_admin_session", JSON.stringify(this.session));
+                    }
+                } catch (e) {}
+            }
+        }
+
         document.getElementById("landing").classList.add("hidden");
         document.getElementById("appContainer").classList.add("hidden");
         this.container.classList.remove("hidden");
@@ -263,7 +311,7 @@ export class AdminAnnotationManager {
                             <i class="fa-solid fa-square-poll-vertical"></i> Validadas
                         </button>
                         <button class="nav-tab ${this.currentTab === 'users' ? 'active' : ''}" data-tab="users">
-                            <i class="fa-solid fa-users-gear"></i> Usuarios
+                            <i class="fa-solid fa-users"></i> Participantes
                         </button>
                         <button class="nav-tab ${this.currentTab === 'export' ? 'active' : ''}" data-tab="export">
                             <i class="fa-solid fa-file-export"></i> Exportar
@@ -1090,160 +1138,348 @@ export class AdminAnnotationManager {
     /**
      * Pestaña de Gestión de Usuarios
      */
+    /**
+     * Pestaña de Directorio de Participantes y Gestión de Claves Temporales
+     */
     async renderUsersTab(body) {
         body.innerHTML = `
-            <div class="users-layout">
-                <!-- Columna Izquierda: Listado de usuarios -->
-                <div class="users-list-panel glass">
-                    <h3>Usuarios del Sistema</h3>
+            <div class="users-directory-container">
+                <div class="users-header-row">
+                    <div>
+                        <h2><i class="fa-solid fa-users"></i> Directorio de Participantes</h2>
+                        <p class="section-subtitle">Visualiza a los usuarios registrados y autogenera códigos temporales para quienes olviden su contraseña.</p>
+                    </div>
+                    <div class="users-actions-bar">
+                        <div class="search-input-wrapper">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="userSearchInput" placeholder="Buscar por nombre, correo o ID..." autocomplete="off">
+                        </div>
+                        <button id="btnRefreshUsers" class="btn btn-secondary btn-sm" title="Refrescar lista">
+                            <i class="fa-solid fa-arrows-rotate"></i> Actualizar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tarjetas de métricas globales -->
+                <div class="users-metrics-grid">
+                    <div class="metric-card glass">
+                        <div class="metric-icon"><i class="fa-solid fa-users-line"></i></div>
+                        <div class="metric-info">
+                            <span class="metric-num" id="statTotalUsers">0</span>
+                            <span class="metric-lbl">Total Registrados</span>
+                        </div>
+                    </div>
+                    <div class="metric-card glass">
+                        <div class="metric-icon success"><i class="fa-solid fa-shield-check"></i></div>
+                        <div class="metric-info">
+                            <span class="metric-num" id="statActiveUsers">0</span>
+                            <span class="metric-lbl">Con Contraseña Activa</span>
+                        </div>
+                    </div>
+                    <div class="metric-card glass">
+                        <div class="metric-icon warning"><i class="fa-solid fa-key"></i></div>
+                        <div class="metric-info">
+                            <span class="metric-num" id="statPendingReset">0</span>
+                            <span class="metric-lbl">Códigos Pendientes</span>
+                        </div>
+                    </div>
+                    <div class="metric-card glass">
+                        <div class="metric-icon primary"><i class="fa-solid fa-video"></i></div>
+                        <div class="metric-info">
+                            <span class="metric-num" id="statTotalSamples">0</span>
+                            <span class="metric-lbl">Videos Grabados</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de participantes -->
+                <div class="users-table-card glass">
                     <div class="table-scroll">
                         <table class="users-table">
                             <thead>
                                 <tr>
-                                    <th>Alias</th>
-                                    <th>Email</th>
+                                    <th>Participante</th>
+                                    <th>ID / Perfil</th>
+                                    <th>Progreso</th>
                                     <th>Rol</th>
-                                    <th>Estado</th>
-                                    <th>Último Acceso</th>
+                                    <th>Estado de Contraseña</th>
+                                    <th style="text-align: right;">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="usersTableBody">
                                 <tr>
-                                    <td colspan="5" style="text-align:center;">Cargando usuarios...</td>
+                                    <td colspan="6" style="text-align:center; padding: 28px;">
+                                        <i class="fa-solid fa-spinner fa-spin"></i> Cargando usuarios...
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- Columna Derecha: Formulario agregar/editar -->
-                <div class="user-form-panel glass">
-                    <h3><i class="fa-solid fa-user-plus"></i> Registrar / Editar Usuario</h3>
-                    <form id="userForm" class="input-group">
-                        <div class="form-field">
-                            <label for="usrEmail">Correo Electrónico (Clave Única)</label>
-                            <input type="email" id="usrEmail" required placeholder="anotador@correo.com">
-                        </div>
-
-                        <div class="form-field">
-                            <label for="usrAlias">Alias o Nombre</label>
-                            <input type="text" id="usrAlias" required placeholder="Anotador A">
-                        </div>
-
-                        <div class="form-field">
-                            <label for="usrCode">Código de Acceso (Texto Plano)</label>
-                            <input type="text" id="usrCode" required placeholder="Ej: ANOT123">
-                        </div>
-
-                        <div class="form-row-grid">
-                            <div class="form-field">
-                                <label for="usrRole">Rol</label>
-                                <select id="usrRole">
-                                    <option value="annotator" selected>Anotador (Annotator)</option>
-                                    <option value="admin">Administrador (Admin)</option>
-                                </select>
-                            </div>
-                            <div class="form-field">
-                                <label for="usrStatus">Estado</label>
-                                <select id="usrStatus">
-                                    <option value="active" selected>Activo</option>
-                                    <option value="inactive">Inactivo</option>
-                                </select>
+                <!-- Modal de Código Autogenerado -->
+                <div id="adminResetModal" class="admin-modal-backdrop hidden">
+                    <div class="admin-modal-card glass">
+                        <div class="modal-header">
+                            <div class="modal-icon-glow"><i class="fa-solid fa-key"></i></div>
+                            <div>
+                                <h3>¡Código Temporal Autogenerado!</h3>
+                                <p id="modalUserSubtitle">Listo para enviar al participante</p>
                             </div>
                         </div>
-
-                        <div id="userFeedback" class="error-msg hidden"></div>
-                        <div id="userSuccess" class="success-msg hidden">Usuario guardado exitosamente.</div>
-
-                        <button type="submit" class="btn btn-primary btn-glow" id="btnUserSubmit" style="width:100%; margin-top:10px;">
-                            <i class="fa-solid fa-user-check"></i> Guardar Usuario
-                        </button>
-                    </form>
+                        <div class="modal-body">
+                            <p class="modal-instruction">
+                                Envía este código al participante. Al entrar con su correo, lo colocará para crear su nueva contraseña:
+                            </p>
+                            <div class="generated-code-display">
+                                <code id="modalGeneratedCode">LSP-0000</code>
+                                <button id="btnModalCopyCode" class="btn btn-sm btn-primary" title="Copiar código">
+                                    <i class="fa-solid fa-copy"></i> Copiar Código
+                                </button>
+                            </div>
+                            <div class="message-preview-box">
+                                <label><i class="fa-brands fa-whatsapp"></i> Mensaje listo para WhatsApp / Correo:</label>
+                                <textarea id="modalMessageTemplate" readonly rows="3"></textarea>
+                                <button id="btnModalCopyMessage" class="btn btn-sm btn-secondary" style="width: 100%; margin-top: 8px;">
+                                    <i class="fa-solid fa-share-nodes"></i> Copiar Mensaje Completo
+                                </button>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button id="btnCloseResetModal" class="btn btn-primary btn-glow" style="width: 100%;">
+                                <i class="fa-solid fa-check"></i> Listo / Cerrar
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
 
         const tableBody = document.getElementById("usersTableBody");
-        const form = document.getElementById("userForm");
-        const btnSubmit = document.getElementById("btnUserSubmit");
-        const errorDiv = document.getElementById("userFeedback");
-        const successDiv = document.getElementById("userSuccess");
+        const searchInput = document.getElementById("userSearchInput");
+        const btnRefresh = document.getElementById("btnRefreshUsers");
+        const modalBackdrop = document.getElementById("adminResetModal");
+        const modalCode = document.getElementById("modalGeneratedCode");
+        const modalSubtitle = document.getElementById("modalUserSubtitle");
+        const modalMsg = document.getElementById("modalMessageTemplate");
+        const btnCloseModal = document.getElementById("btnCloseResetModal");
+        const btnModalCopyCode = document.getElementById("btnModalCopyCode");
+        const btnModalCopyMessage = document.getElementById("btnModalCopyMessage");
 
-        // Cargar usuarios
-        const loadUsers = async () => {
-            try {
-                const res = await this.apiPost("listUsers");
-                const users = res.users || [];
-                tableBody.innerHTML = users.map(u => {
-                    const lastLogin = u.last_login ? new Date(u.last_login).toLocaleString() : "Nunca";
-                    return `
-                        <tr class="user-row" data-email="${u.email}" data-alias="${u.alias}" data-role="${u.role}" data-status="${u.status}">
-                            <td><strong>${u.alias}</strong></td>
-                            <td>${u.email}</td>
-                            <td><span class="role-badge ${u.role}">${u.role.toUpperCase()}</span></td>
-                            <td><span class="status-badge ${u.status}">${u.status.toUpperCase()}</span></td>
-                            <td><small>${lastLogin}</small></td>
-                        </tr>
-                    `;
-                }).join("");
+        let cachedUsers = [];
 
-                // Hacer filas seleccionables para rellenar formulario
-                const rows = tableBody.querySelectorAll(".user-row");
-                rows.forEach(row => {
-                    row.addEventListener("click", () => {
-                        document.getElementById("usrEmail").value = row.dataset.email;
-                        document.getElementById("usrAlias").value = row.dataset.alias;
-                        document.getElementById("usrRole").value = row.dataset.role;
-                        document.getElementById("usrStatus").value = row.dataset.status;
-                        document.getElementById("usrCode").value = ""; // No se expone el código por seguridad en UI
-                        document.getElementById("usrCode").placeholder = "(Dejar vacío para mantener actual)";
-                        document.getElementById("usrCode").required = false;
-                    });
+        const renderTable = (usersToRender) => {
+            if (!usersToRender || usersToRender.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align:center; padding: 24px; color: var(--text-muted);">
+                            <i class="fa-solid fa-user-slash"></i> No se encontraron participantes.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tableBody.innerHTML = usersToRender.map(u => {
+                const alias = u.alias || "Participante";
+                const initial = (alias[0] || "P").toUpperCase();
+                const totalSamples = u.total_samples || 0;
+                const percent = Math.min(Math.round((totalSamples / 400) * 100), 100);
+                const roleBadge = u.role === 'admin' 
+                    ? `<span class="badge-role-admin"><i class="fa-solid fa-shield-halved"></i> ADMIN</span>`
+                    : `<span class="badge-role-user">PARTICIPANTE</span>`;
+
+                const pwdBadge = u.must_change_password
+                    ? `<span class="badge-pwd-pending" title="Pendiente de definir o restablecer contraseña">
+                         <i class="fa-solid fa-clock"></i> Código: <code>${u.temp_code || 'Por asignar'}</code>
+                       </span>`
+                    : `<span class="badge-pwd-active" title="Contraseña creada y activa">
+                         <i class="fa-solid fa-circle-check"></i> Contraseña Lista
+                       </span>`;
+
+                return `
+                    <tr class="user-row-item">
+                        <td>
+                            <div class="user-cell-profile">
+                                <div class="user-avatar-initial">${initial}</div>
+                                <div class="user-meta-text">
+                                    <strong>${alias}</strong>
+                                    <small>${u.email}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="user-cell-demographics">
+                                <span class="tag-id">${u.participant_id || '---'}</span>
+                                <small>${u.dominant_hand || 'Derecha'} • ${u.lsp_level || 'Básico'} • ${u.region || 'Lima'}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="user-cell-progress">
+                                <div class="progress-bar-mini-bg">
+                                    <div class="progress-bar-mini-fill" style="width: ${percent}%;"></div>
+                                </div>
+                                <span class="progress-label-mini">${totalSamples} / 400 videos (${percent}%)</span>
+                            </div>
+                        </td>
+                        <td>${roleBadge}</td>
+                        <td>${pwdBadge}</td>
+                        <td style="text-align: right;">
+                            <div class="user-action-buttons">
+                                <button class="btn btn-sm btn-action-reset" data-email="${u.email}" data-alias="${alias}" title="Autogenerar nueva clave temporal para este usuario">
+                                    <i class="fa-solid fa-rotate-right"></i> Autogenerar Clave
+                                </button>
+                                ${u.temp_code ? `
+                                <button class="btn btn-sm btn-action-copy" data-code="${u.temp_code}" data-email="${u.email}" data-alias="${alias}" title="Copiar código temporal para enviar">
+                                    <i class="fa-solid fa-copy"></i> Copiar
+                                </button>
+                                ` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+
+            // Vincular botones de reseteo
+            tableBody.querySelectorAll(".btn-action-reset").forEach(btn => {
+                btn.addEventListener("click", async (e) => {
+                    e.stopPropagation();
+                    const email = btn.dataset.email;
+                    const alias = btn.dataset.alias;
+
+                    if (!confirm(`¿Deseas autogenerar una nueva clave temporal para "${alias}" (${email})? El usuario podrá usarla para definir una nueva contraseña.`)) {
+                        return;
+                    }
+
+                    try {
+                        btn.disabled = true;
+                        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generando...`;
+
+                        const res = await this.apiPost("adminResetParticipantPassword", {
+                            target_email: email
+                        });
+
+                        const newCode = res.temp_code || "LSP-XXXX";
+                        showResetModal(alias, email, newCode);
+                        await loadUsers(false);
+                    } catch (err) {
+                        alert("Error al autogenerar clave: " + (err.message || err));
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Autogenerar Clave`;
+                    }
                 });
+            });
+
+            // Vincular botones de copiado rápido
+            tableBody.querySelectorAll(".btn-action-copy").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const code = btn.dataset.code;
+                    const email = btn.dataset.email;
+                    const alias = btn.dataset.alias;
+                    showResetModal(alias, email, code);
+                });
+            });
+        };
+
+        const showResetModal = (alias, email, code) => {
+            modalSubtitle.textContent = `${alias} (${email})`;
+            modalCode.textContent = code;
+            modalMsg.value = `Hola ${alias}, tu código temporal de activación para DataCollect LSP es: ${code}\nIngresa a la plataforma con tu correo (${email}), coloca este código y crea tu nueva contraseña.`;
+            modalBackdrop.classList.remove("hidden");
+        };
+
+        const updateMetrics = (users) => {
+            const total = users.length;
+            const active = users.filter(u => !u.must_change_password).length;
+            const pending = users.filter(u => u.must_change_password).length;
+            const samplesSum = users.reduce((acc, u) => acc + (u.total_samples || 0), 0);
+
+            const statTotal = document.getElementById("statTotalUsers");
+            const statAct = document.getElementById("statActiveUsers");
+            const statPend = document.getElementById("statPendingReset");
+            const statSamp = document.getElementById("statTotalSamples");
+
+            if (statTotal) statTotal.textContent = total;
+            if (statAct) statAct.textContent = active;
+            if (statPend) statPend.textContent = pending;
+            if (statSamp) statSamp.textContent = samplesSum;
+        };
+
+        const loadUsers = async (showLoading = true) => {
+            try {
+                if (showLoading) {
+                    tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 28px;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando usuarios...</td></tr>`;
+                }
+                const res = await this.apiPost("listUsers");
+                cachedUsers = res.users || [];
+                updateMetrics(cachedUsers);
+
+                const q = searchInput.value.trim().toLowerCase();
+                if (q) {
+                    filterUsers(q);
+                } else {
+                    renderTable(cachedUsers);
+                }
             } catch (e) {
-                tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-error);">${e.message}</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-error); padding: 24px;"><i class="fa-solid fa-triangle-exclamation"></i> Error cargando participantes: ${e.message}</td></tr>`;
             }
         };
 
-        await loadUsers();
-
-        // Enviar formulario
-        form.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            errorDiv.classList.add("hidden");
-            successDiv.classList.add("hidden");
-
-            const email = document.getElementById("usrEmail").value.trim();
-            const alias = document.getElementById("usrAlias").value.trim();
-            const role = document.getElementById("usrRole").value;
-            const status = document.getElementById("usrStatus").value;
-            const code = document.getElementById("usrCode").value.trim();
-
-            try {
-                btnSubmit.disabled = true;
-                btnSubmit.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando...`;
-
-                const userData = { email, alias, role, status };
-                if (code) {
-                    userData.access_code = code;
-                }
-
-                await this.apiPost("upsertUser", { userData });
-                
-                successDiv.classList.remove("hidden");
-                form.reset();
-                document.getElementById("usrCode").required = true;
-                document.getElementById("usrCode").placeholder = "Ej: ANOT123";
-                
-                await loadUsers();
-            } catch (err) {
-                errorDiv.textContent = err.message;
-                errorDiv.classList.remove("hidden");
-            } finally {
-                btnSubmit.disabled = false;
-                btnSubmit.innerHTML = `<i class="fa-solid fa-user-check"></i> Guardar Usuario`;
+        const filterUsers = (query) => {
+            if (!query) {
+                renderTable(cachedUsers);
+                return;
             }
+            const filtered = cachedUsers.filter(u => {
+                const a = (u.alias || "").toLowerCase();
+                const e = (u.email || "").toLowerCase();
+                const id = (u.participant_id || "").toLowerCase();
+                const reg = (u.region || "").toLowerCase();
+                return a.includes(query) || e.includes(query) || id.includes(query) || reg.includes(query);
+            });
+            renderTable(filtered);
+        };
+
+        // Búsqueda en tiempo real
+        searchInput.addEventListener("input", () => {
+            filterUsers(searchInput.value.trim().toLowerCase());
         });
+
+        // Botón actualizar
+        btnRefresh.addEventListener("click", () => loadUsers(true));
+
+        // Eventos del modal
+        btnCloseModal.addEventListener("click", () => {
+            modalBackdrop.classList.add("hidden");
+        });
+
+        modalBackdrop.addEventListener("click", (e) => {
+            if (e.target === modalBackdrop) modalBackdrop.classList.add("hidden");
+        });
+
+        btnModalCopyCode.addEventListener("click", () => {
+            const code = modalCode.textContent.trim();
+            navigator.clipboard.writeText(code).then(() => {
+                btnModalCopyCode.innerHTML = `<i class="fa-solid fa-check"></i> ¡Copiado!`;
+                setTimeout(() => {
+                    btnModalCopyCode.innerHTML = `<i class="fa-solid fa-copy"></i> Copiar Código`;
+                }, 2000);
+            });
+        });
+
+        btnModalCopyMessage.addEventListener("click", () => {
+            const msg = modalMsg.value;
+            navigator.clipboard.writeText(msg).then(() => {
+                btnModalCopyMessage.innerHTML = `<i class="fa-solid fa-check"></i> ¡Mensaje Copiado!`;
+                setTimeout(() => {
+                    btnModalCopyMessage.innerHTML = `<i class="fa-solid fa-share-nodes"></i> Copiar Mensaje Completo`;
+                }, 2000);
+            });
+        });
+
+        await loadUsers(true);
     }
 
     /**

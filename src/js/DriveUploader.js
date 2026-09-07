@@ -60,6 +60,14 @@ export class DriveUploader {
         });
     }
 
+    async adminResetParticipantPassword(targetEmail, targetParticipantId = "") {
+        return this._post({
+            action: "adminResetParticipantPassword",
+            target_email: targetEmail,
+            target_participant_id: targetParticipantId
+        });
+    }
+
     async _post(payload) {
         if (!this.hasUrl()) throw new Error("Google Apps Script URL no configurada.");
         try {

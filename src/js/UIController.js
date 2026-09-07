@@ -11,6 +11,7 @@ export class UIController {
         this.authStepEmail = document.getElementById('authStepEmail');
         this.authStepNewUser = document.getElementById('authStepNewUser');
         this.authStepReturningUser = document.getElementById('authStepReturningUser');
+        this.authStepResetPassword = document.getElementById('authStepResetPassword');
 
         this.authEmail = document.getElementById('authEmail');
         this.btnCheckEmail = document.getElementById('btnCheckEmail');
@@ -27,6 +28,15 @@ export class UIController {
         this.authLoginPassword = document.getElementById('authLoginPassword');
         this.btnLogin = document.getElementById('btnLogin');
         this.btnBackToEmailReturning = document.getElementById('btnBackToEmailReturning');
+        this.btnForgotPwdHelp = document.getElementById('btnForgotPwdHelp');
+
+        // Reset Password step elements
+        this.resetUserEmail = document.getElementById('resetUserEmail');
+        this.authResetTempCode = document.getElementById('authResetTempCode');
+        this.authResetNewPassword = document.getElementById('authResetNewPassword');
+        this.authResetConfirmPassword = document.getElementById('authResetConfirmPassword');
+        this.btnCompleteResetPassword = document.getElementById('btnCompleteResetPassword');
+        this.btnBackToEmailReset = document.getElementById('btnBackToEmailReset');
 
         this.activeProfileAlias = document.getElementById('activeProfileAlias');
         this.activeProfileEmail = document.getElementById('activeProfileEmail');
@@ -392,6 +402,7 @@ export class UIController {
         if (this.authStepEmail) this.authStepEmail.classList.add('hidden');
         if (this.authStepNewUser) this.authStepNewUser.classList.add('hidden');
         if (this.authStepReturningUser) this.authStepReturningUser.classList.add('hidden');
+        if (this.authStepResetPassword) this.authStepResetPassword.classList.add('hidden');
 
         if (step === 'email') {
             if (this.authStepEmail) this.authStepEmail.classList.remove('hidden');
@@ -405,6 +416,11 @@ export class UIController {
             if (this.landing) this.landing.classList.add('hidden');
         } else if (step === 'returning') {
             if (this.authStepReturningUser) this.authStepReturningUser.classList.remove('hidden');
+            if (this.authView) this.authView.classList.remove('hidden');
+            if (this.appContainer) this.appContainer.classList.add('hidden');
+            if (this.landing) this.landing.classList.add('hidden');
+        } else if (step === 'reset') {
+            if (this.authStepResetPassword) this.authStepResetPassword.classList.remove('hidden');
             if (this.authView) this.authView.classList.remove('hidden');
             if (this.appContainer) this.appContainer.classList.add('hidden');
             if (this.landing) this.landing.classList.add('hidden');
@@ -433,15 +449,24 @@ export class UIController {
                     this.btnCheckEmail.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verificando...';
                     const res = await this.authHandlers.checkEmail(email);
 
-                    if (res.is_new || res.must_change_password) {
-                        // Usuario nuevo o que aún no define contraseña: código autorrellenado
+                    if (res.must_change_password && res.has_profile) {
+                        // Usuario registrado existente con clave restablecida por Admin:
+                        // debe ingresar el código generado por el admin y definir su nueva contraseña
+                        if (this.resetUserEmail) this.resetUserEmail.textContent = email;
+                        if (this.authResetTempCode) this.authResetTempCode.value = "";
+                        if (this.authResetNewPassword) this.authResetNewPassword.value = "";
+                        if (this.authResetConfirmPassword) this.authResetConfirmPassword.value = "";
+                        this.showAuthStep('reset');
+                        if (this.authResetTempCode) this.authResetTempCode.focus();
+                    } else if (res.is_new || res.must_change_password) {
+                        // Usuario nuevo o primera vez: código autogenerado visible en pantalla
                         if (this.displayTempCode) this.displayTempCode.textContent = res.temp_code || "LSP-XXXX";
                         if (this.authTempCode) this.authTempCode.value = res.temp_code || "";
                         if (res.alias && this.participantAlias) this.participantAlias.value = res.alias;
                         this.showAuthStep('new');
                         if (this.authNewPassword) this.authNewPassword.focus();
                     } else {
-                        // Usuario recurrente con contraseña
+                        // Usuario recurrente con contraseña activa
                         if (this.greetingAlias) this.greetingAlias.textContent = res.alias || email.split('@')[0];
                         if (this.greetingEmail) this.greetingEmail.textContent = email;
                         if (this.authLoginPassword) this.authLoginPassword.value = "";
@@ -462,6 +487,47 @@ export class UIController {
         }
         if (this.btnBackToEmailReturning) {
             this.btnBackToEmailReturning.addEventListener('click', () => this.showAuthStep('email'));
+        }
+        if (this.btnBackToEmailReset) {
+            this.btnBackToEmailReset.addEventListener('click', () => this.showAuthStep('email'));
+        }
+
+        if (this.btnForgotPwdHelp) {
+            this.btnForgotPwdHelp.addEventListener('click', () => {
+                alert("Si olvidaste tu contraseña, comunícate con el administrador del proyecto para que te genere un código temporal de acceso (LSP-XXXX).\n\nUna vez que el admin te lo envíe, ingresa tu correo y podrás usar ese código para definir tu nueva contraseña.");
+            });
+        }
+
+        if (this.btnCompleteResetPassword) {
+            this.btnCompleteResetPassword.addEventListener('click', async () => {
+                const email = (this.authEmail.value || "").trim().toLowerCase();
+                const tempCode = (this.authResetTempCode.value || "").trim().toUpperCase();
+                const newPass = (this.authResetNewPassword.value || "").trim();
+                const confirmPass = (this.authResetConfirmPassword.value || "").trim();
+
+                if (!tempCode) {
+                    return this._alert("Por favor ingresa el código temporal proporcionado por el administrador.");
+                }
+                if (!newPass || newPass.length < 4) {
+                    return this._alert("La nueva contraseña debe tener al menos 4 caracteres.");
+                }
+                if (newPass !== confirmPass) {
+                    return this._alert("Las contraseñas no coinciden. Por favor verifícalas.");
+                }
+
+                try {
+                    this.btnCompleteResetPassword.disabled = true;
+                    this.btnCompleteResetPassword.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Actualizando...';
+                    
+                    const session = await this.authHandlers.completeRegistration(email, tempCode, newPass, {});
+                    this.activateParticipantSession(session, session.participant || {});
+                } catch (err) {
+                    this._alert(err.message || "Error al restablecer contraseña: " + err.message);
+                } finally {
+                    this.btnCompleteResetPassword.disabled = false;
+                    this.btnCompleteResetPassword.innerHTML = '<i class="fa-solid fa-lock-open"></i> Guardar Contraseña e Ingresar';
+                }
+            });
         }
 
         if (this.btnCompleteRegistration) {
