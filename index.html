@@ -279,112 +279,118 @@
     <!-- ==================== APP (Grabador) — OCULTO AL INICIO ==================== -->
     <main class="app-container hidden" id="appContainer">
 
-        <!-- SIDEBAR (Desktop) -->
-        <aside class="sidebar" id="sidebar">
-            <div class="brand">
-                <div class="brand-icon">
+        <!-- ==================== BARRA SUPERIOR (NAVBAR) ==================== -->
+        <header class="app-topbar glass" id="appTopbar">
+            <div class="topbar-brand">
+                <div class="brand-icon-sm">
                     <i class="fa-solid fa-hands-asl-interpreting"></i>
                 </div>
-                <div>
-                    <h1>DataCollect <span>LSP</span></h1>
-                    <p class="brand-subtitle">Lenguaje de Señas Peruano</p>
+                <div class="brand-text">
+                    <h2>DataCollect <span>LSP</span></h2>
+                    <span class="badge-dataset-mode"><i class="fa-solid fa-database"></i> 40 Señas Aisladas</span>
                 </div>
+            </div>
+
+            <div class="topbar-user-area">
+                <div class="user-chip" id="userChip">
+                    <div class="user-avatar-sm">
+                        <i class="fa-solid fa-user-check"></i>
+                    </div>
+                    <div class="user-info-sm">
+                        <span class="user-alias" id="activeProfileAlias">Participante</span>
+                        <span class="user-meta-sub">
+                            <span class="badge-role-sm" id="activeProfileRole">Participante</span>
+                            <span class="meta-dot">•</span>
+                            <span id="activeProfileHand">Derecha</span>
+                            <span class="meta-dot">•</span>
+                            <span id="activeProfileLevel">Básico</span>
+                            <span class="hidden" id="activeProfileRegion">Lima</span>
+                            <span class="hidden" id="activeProfileEmail">correo@ejemplo.com</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div id="adminPanelQuickLink" class="admin-quick-link-top hidden">
+                    <button id="btnGoToAdmin" class="btn-topbar-admin" type="button" title="Ir al Panel Admin">
+                        <i class="fa-solid fa-shield-halved"></i> <span>Panel Admin</span>
+                    </button>
+                </div>
+
                 <button class="theme-switch app-theme-switch" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">
                     <span class="switch-stars"></span>
                     <span class="switch-knob"><i class="fa-solid fa-moon theme-icon"></i></span>
                 </button>
-            </div>
 
-            <!-- Card: Sesión Activa del Participante -->
-            <div class="card glass" id="activeSessionCard">
-                <div class="card-header">
-                    <i class="fa-solid fa-user-circle"></i>
-                    <h2>Participante Activo</h2>
-                </div>
-                <div class="active-profile-card">
-                    <div class="profile-header">
-                        <div class="profile-avatar">
-                            <i class="fa-solid fa-user-check"></i>
+                <button id="btnLogout" class="btn-topbar-logout" type="button" title="Cerrar Sesión">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <span>Salir</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- CUERPO PRINCIPAL DEL ESTUDIO -->
+        <div class="app-main-layout">
+
+            <!-- SIDEBAR (Desktop) -->
+            <aside class="sidebar" id="sidebar">
+                <!-- Modo oculto fijo en isolated -->
+                <input type="hidden" id="modeSelect" value="isolated">
+
+                <!-- Card: Selector de Palabra Único y Buscable -->
+                <div class="card glass" id="wordSelectorCard">
+                    <div class="card-header">
+                        <i class="fa-solid fa-language"></i>
+                        <h2 id="selectorTitle">Ítem a Grabar</h2>
+                    </div>
+
+                    <div class="unified-selector-container">
+                        <!-- COMBOBOX BUSCADOR + LISTA INTEGRADA -->
+                        <div class="combobox-wrapper" id="comboboxWrapper">
+                            <div class="combobox-input-box">
+                                <i class="fa-solid fa-magnifying-glass combobox-search-icon"></i>
+                                <input type="text" id="wordSearchInput" class="combobox-search-input" placeholder="Escribe para buscar o elige..." autocomplete="off">
+                                <button type="button" class="combobox-toggle-btn" id="comboboxToggleBtn" title="Ver lista de señas">
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </button>
+                            </div>
+                            <div class="combobox-dropdown hidden" id="comboboxDropdown">
+                                <div class="combobox-options" id="comboboxOptionsList">
+                                    <!-- Generado dinámicamente con las 40 señas -->
+                                </div>
+                            </div>
                         </div>
-                        <div class="profile-info">
-                            <h3 id="activeProfileAlias">Participante</h3>
-                            <p id="activeProfileEmail">correo@ejemplo.com</p>
-                            <span class="badge-role" id="activeProfileRole">Participante</span>
+
+                        <!-- Elementos ocultos para compatibilidad JS -->
+                        <select id="wordSelect" class="hidden"></select>
+                        <select id="categorySelect" class="hidden"></select>
+                        <input type="text" id="wordSearch" class="hidden">
+
+                        <!-- Indicador de 10 Repeticiones -->
+                        <div class="repetition-indicator" id="repetitionContainer">
+                            <div class="repetition-header-row">
+                                <span class="rep-label">Progreso de Repeticiones:</span>
+                                <strong class="rep-counter" id="repetitionCounterText">1 de 10</strong>
+                            </div>
+                            <div id="repetitionCircles" class="circles circles-10">
+                                <span class="circle" data-rep="1">1</span>
+                                <span class="circle" data-rep="2">2</span>
+                                <span class="circle" data-rep="3">3</span>
+                                <span class="circle" data-rep="4">4</span>
+                                <span class="circle" data-rep="5">5</span>
+                                <span class="circle" data-rep="6">6</span>
+                                <span class="circle" data-rep="7">7</span>
+                                <span class="circle" data-rep="8">8</span>
+                                <span class="circle" data-rep="9">9</span>
+                                <span class="circle" data-rep="10">10</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="profile-meta-grid">
-                        <div><span>Mano:</span> <strong id="activeProfileHand">Derecha</strong></div>
-                        <div><span>Nivel:</span> <strong id="activeProfileLevel">Intermedio</strong></div>
-                        <div><span>Región:</span> <strong id="activeProfileRegion">Lima</strong></div>
-                    </div>
 
-                    <div id="adminPanelQuickLink" class="admin-quick-link hidden" style="margin-top: 12px;">
-                        <button id="btnGoToAdmin" class="btn btn-admin" type="button" style="width: 100%;">
-                            <i class="fa-solid fa-shield-halved"></i> Ir al Panel Admin (#admin)
-                        </button>
-                    </div>
-
-                    <button id="btnLogout" class="btn btn-secondary btn-sm" type="button" style="width: 100%; margin-top: 12px;">
-                        <i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesión
-                    </button>
-                </div>
-            </div>
-
-            <!-- Card: Modo de Captura -->
-            <div class="card glass hidden" id="modeSelectorCard">
-                <div class="card-header">
-                    <i class="fa-solid fa-clapperboard"></i>
-                    <h2>Modo de Captura</h2>
-                </div>
-                <div class="input-group">
-                    <select id="modeSelect">
-                        <option value="isolated">Bloque A: Léxico Aislado</option>
-                        <option value="expression">Bloque B: Expresiones Fijas</option>
-                        <option value="template">Bloque C: Secuencias Cortas</option>
-                        <option value="continuous">Bloque D: Signing Continuo</option>
-                    </select>
-                    <p class="mode-description" id="modeDescription">Captura de señas individuales, una por clip.</p>
-                </div>
-            </div>
-
-            <!-- Card: Selector de Palabra / Prompt (Dinámico) -->
-            <div class="card glass hidden" id="wordSelectorCard">
-                <div class="card-header">
-                    <i class="fa-solid fa-language"></i>
-                    <h2 id="selectorTitle">Palabra a Grabar</h2>
-                </div>
-
-                <div class="input-group">
-                    <label for="categorySelect">Categoría</label>
-                    <select id="categorySelect"></select>
-                </div>
-
-                <div class="input-group">
-                    <label for="wordSelect">Ítem a grabar</label>
-                    <div class="search-container" id="searchContainer">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" id="wordSearch" placeholder="Buscar seña...">
-                    </div>
-                    <select id="wordSelect" disabled>
-                        <option value="">Primero elige categoría</option>
-                    </select>
-                    <div class="repetition-indicator" id="repetitionContainer">
-                        <span>Repetición:</span>
-                        <div id="repetitionCircles" class="circles">
-                            <span class="circle" data-rep="1">1</span>
-                            <span class="circle" data-rep="2">2</span>
-                            <span class="circle" data-rep="3">3</span>
-                            <span class="circle" data-rep="4">4</span>
-                            <span class="circle" data-rep="5">5</span>
+                        <div id="promptInstructions" class="prompt-instructions">
+                            <p id="promptTextDisplay">Cargando seña...</p>
+                            <small id="durationLimitNote">Límite sugerido: 2-4s</small>
                         </div>
                     </div>
-
-                    <div id="promptInstructions" class="prompt-instructions hidden">
-                        <p id="promptTextDisplay"></p>
-                        <small id="durationLimitNote"></small>
-                    </div>
                 </div>
-            </div>
 
             <!-- Card: Controles -->
             <div class="card glass controls-card">
@@ -557,6 +563,7 @@
                 </div>
             </div>
         </section>
+        </div> <!-- .app-main-layout -->
 
     </main>
 

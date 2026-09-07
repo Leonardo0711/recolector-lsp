@@ -59,8 +59,14 @@ export class UIController {
             age: document.getElementById('consentAge')
         };
 
-        // --- Word/Prompt Selector ---
+        // --- Word/Prompt Selector & Combobox ---
         this.wordSelectorCard = document.getElementById('wordSelectorCard');
+        this.comboboxWrapper = document.getElementById('comboboxWrapper');
+        this.wordSearchInput = document.getElementById('wordSearchInput');
+        this.comboboxToggleBtn = document.getElementById('comboboxToggleBtn');
+        this.comboboxDropdown = document.getElementById('comboboxDropdown');
+        this.comboboxOptionsList = document.getElementById('comboboxOptionsList');
+        this.repetitionCounterText = document.getElementById('repetitionCounterText');
         this.categorySelect = document.getElementById('categorySelect');
         this.wordSelect = document.getElementById('wordSelect');
         this.wordSearch = document.getElementById('wordSearch');
@@ -134,6 +140,7 @@ export class UIController {
         this.initReviewButtons();
         this.initProtocol();
         this.initSearchLogic();
+        this.initCombobox();
         
         // Load existing participant session if available
         this.loadParticipantFromStorage();
@@ -171,126 +178,185 @@ export class UIController {
     }
 
     updateSelectorUI() {
-        const mode = this.modeSelect.value;
-        this.categorySelect.innerHTML = '<option value="">-- Selecciona Categoría --</option>';
-        this.wordSelect.innerHTML = '<option value="">-- Selecciona Ítem --</option>';
-        this.wordSelect.disabled = true;
-
         if (!this.vocab || this.vocab.length === 0) {
             console.warn("No hay vocabulario para mostrar en la UI.");
             return;
         }
 
-        if (mode === 'continuous') {
-            this.selectorTitle.textContent = "Prompt Continuo";
-            this.categorySelect.parentElement.classList.add('hidden');
-            this.searchContainer.classList.remove('hidden');
-            this.repetitionContainer.classList.add('hidden');
-            this.populateContinuousList(this.vocab);
-        } else {
-            this.selectorTitle.textContent = mode === 'template' ? "Secuencia a Grabar" : "Palabra a Grabar";
-            this.categorySelect.parentElement.classList.remove('hidden');
-            this.searchContainer.classList.remove('hidden');
-            this.repetitionContainer.classList.remove('hidden');
-            
-            // Extract unique categories robustly
-            const cats = this.vocab.map(v => v.categoria || v.category || v.group).filter(Boolean);
-            const uniqueCats = Array.from(new Set(cats)).sort();
-            
-            console.log("Categorías detectadas:", uniqueCats);
-            this.populateCategories(uniqueCats);
+        // Render options in unified combobox
+        this.renderComboboxOptions();
+
+        // Populate hidden wordSelect for backwards compatibility
+        if (this.wordSelect) {
+            this.wordSelect.innerHTML = '<option value="">-- Seleccionar --</option>';
+            this.vocab.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.label_id || item.prompt_id || "";
+                opt.textContent = item.label || item.prompt_text || "";
+                this.wordSelect.appendChild(opt);
+            });
+        }
+
+        // If participant session is active, select resume word
+        if (this.participantData) {
+            this.selectResumeWord();
         }
     }
 
-    initSearchLogic() {
-        this.wordSearch.oninput = () => {
-            const query = this.wordSearch.value.toLowerCase().trim();
-            const mode = this.modeSelect.value;
-            
-            if (query === "") {
-                if (mode === 'continuous') this.populateContinuousList(this.vocab);
-                else {
-                    const cat = this.categorySelect.value;
-                    const words = cat ? this.vocab.filter(v => (v.categoria || v.category) === cat) : [];
-                    this.populateWords(words);
-                }
-                return;
-            }
+    initCombobox() {
+        if (!this.wordSearchInput || !this.comboboxDropdown) return;
 
-            let filtered = [];
-            if (mode === 'continuous') {
-                filtered = this.vocab.filter(v => v.prompt_text.toLowerCase().includes(query));
-                this.renderWordOptions(filtered, 'prompt_id', 'prompt_text');
-            } else {
-                const cat = this.categorySelect.value;
-                // Allow search across ALL categories if none selected, or filter by current
-                filtered = this.vocab.filter(v => {
-                    const matchesCat = !cat || (v.categoria || v.category) === cat;
-                    const label = (v.label || v.prompt_text || "").toLowerCase();
-                    return matchesCat && label.includes(query);
-                });
-                this.renderWordOptions(filtered, 'label_id', 'label');
-            }
-        };
-    }
-
-    renderWordOptions(items, idKey, textKey) {
-        this.wordSelect.innerHTML = '<option value="">-- Seleccionar --</option>';
-        items.forEach(item => {
-            const opt = document.createElement('option');
-            opt.value = item[idKey] || item.label_id || item.prompt_id || "";
-            opt.textContent = item[textKey] || item.label || item.prompt_text || "";
-            this.wordSelect.appendChild(opt);
+        // Open/filter on typing
+        this.wordSearchInput.addEventListener('input', () => {
+            const query = this.wordSearchInput.value.trim();
+            this.renderComboboxOptions(query);
+            this.openCombobox();
         });
-        this.wordSelect.disabled = items.length === 0;
+
+        // Open on focus
+        this.wordSearchInput.addEventListener('focus', () => {
+            const query = this.wordSearchInput.value.trim();
+            this.renderComboboxOptions(query);
+            this.openCombobox();
+        });
+
+        // Toggle button click
+        if (this.comboboxToggleBtn) {
+            this.comboboxToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.comboboxDropdown.classList.contains('hidden')) {
+                    this.renderComboboxOptions(this.wordSearchInput.value.trim());
+                    this.openCombobox();
+                    this.wordSearchInput.focus();
+                } else {
+                    this.closeCombobox();
+                }
+            });
+        }
+
+        // Close when clicking outside combobox
+        document.addEventListener('click', (e) => {
+            if (this.comboboxWrapper && !this.comboboxWrapper.contains(e.target)) {
+                this.closeCombobox();
+            }
+        });
+
+        // Repetition circles click event
+        this.repetitionCircles.forEach(circle => {
+            circle.addEventListener('click', () => {
+                const rep = parseInt(circle.dataset.rep);
+                if (rep >= 1 && rep <= 10) {
+                    this.currentRepetition = rep;
+                    this.updateRepetitionUI();
+                }
+            });
+        });
     }
 
-    populateCategories(categories) {
-        this.categorySelect.innerHTML = '<option value="">-- Elige Categoría --</option>';
-        if (categories.length === 0) {
-            const opt = document.createElement('option');
-            opt.textContent = "(No se encontraron categorías)";
-            this.categorySelect.appendChild(opt);
+    openCombobox() {
+        if (this.comboboxDropdown) {
+            this.comboboxDropdown.classList.remove('hidden');
+        }
+        if (this.comboboxToggleBtn) {
+            this.comboboxToggleBtn.classList.add('open');
+        }
+    }
+
+    closeCombobox() {
+        if (this.comboboxDropdown) {
+            this.comboboxDropdown.classList.add('hidden');
+        }
+        if (this.comboboxToggleBtn) {
+            this.comboboxToggleBtn.classList.remove('open');
+        }
+    }
+
+    renderComboboxOptions(filter = '') {
+        if (!this.comboboxOptionsList) return;
+        this.comboboxOptionsList.innerHTML = '';
+
+        const normalizedFilter = filter.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        const filtered = this.vocab.filter(item => {
+            if (!normalizedFilter) return true;
+            const labelNorm = (item.label || item.prompt_text || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const catNorm = (item.categoria || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            return labelNorm.includes(normalizedFilter) || catNorm.includes(normalizedFilter);
+        });
+
+        if (filtered.length === 0) {
+            const noRes = document.createElement('div');
+            noRes.className = 'combobox-no-results';
+            noRes.innerHTML = '<i class="fa-solid fa-circle-question"></i> No se encontraron señas';
+            this.comboboxOptionsList.appendChild(noRes);
             return;
         }
 
-        categories.forEach(cat => {
-            const opt = document.createElement('option');
-            opt.value = cat;
-            opt.textContent = cat;
-            this.categorySelect.appendChild(opt);
+        filtered.forEach(item => {
+            const itemEl = document.createElement('div');
+            itemEl.className = 'combobox-item';
+            const id = item.label_id || item.prompt_id;
+            const completedReps = this.participantProgress[id] || 0;
+            const isSelected = this.currentWord && (this.currentWord.label_id || this.currentWord.prompt_id) === id;
+
+            if (isSelected) {
+                itemEl.classList.add('selected');
+            }
+
+            let badgeClass = 'item-progress-badge';
+            let badgeText = `${completedReps}/10`;
+            if (completedReps >= 10) {
+                badgeClass += ' completed';
+                badgeText = '10/10 ✓';
+            } else if (completedReps > 0) {
+                badgeClass += ' in-progress';
+            }
+
+            itemEl.innerHTML = `
+                <div class="item-main">
+                    <span class="item-label">${item.label || item.prompt_text}</span>
+                    ${item.categoria ? `<span class="item-category">${item.categoria}</span>` : ''}
+                </div>
+                <span class="${badgeClass}">${badgeText}</span>
+            `;
+
+            itemEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.selectWord(item);
+                this.closeCombobox();
+            });
+
+            this.comboboxOptionsList.appendChild(itemEl);
         });
-
-        this.categorySelect.onchange = () => {
-            const cat = this.categorySelect.value;
-            const words = this.vocab.filter(v => (v.categoria || v.category) === cat);
-            this.wordSearch.value = ""; // Reset search on cat change
-            this.populateWords(words);
-        };
     }
 
-    populateWords(words) {
-        this.renderWordOptions(words, 'label_id', 'label');
-        
-        this.wordSelect.onchange = () => {
-            const val = this.wordSelect.value;
-            this.currentWord = words.find(v => (v.label_id || v.prompt_id || "") === val);
-            this.updatePromptUI();
-            this.loadRepetitionProgress();
-            this.updateRepetitionUI();
-        };
+    selectWord(item) {
+        if (!item) return;
+        this.currentWord = item;
+        const id = item.label_id || item.prompt_id;
+
+        if (this.wordSearchInput) {
+            this.wordSearchInput.value = item.label || item.prompt_text || '';
+        }
+        if (this.wordSelect) {
+            this.wordSelect.value = id;
+        }
+
+        this.updatePromptUI();
+        this.loadRepetitionProgress();
+        this.updateRepetitionUI();
     }
 
-    populateContinuousList(items) {
-        this.renderWordOptions(items, 'prompt_id', 'prompt_text');
-
-        this.wordSelect.onchange = () => {
-            const promptId = this.wordSelect.value;
-            this.currentWord = items.find(i => (i.prompt_id || i.label_id || "") === promptId);
-            this.updatePromptUI();
-            this.loadRepetitionProgress();
-            this.updateRepetitionUI();
-        };
+    initSearchLogic() {
+        // Wrapper for compatibility with any external calls
+        if (this.wordSearch) {
+            this.wordSearch.oninput = () => {
+                if (this.wordSearchInput) {
+                    this.wordSearchInput.value = this.wordSearch.value;
+                }
+                this.renderComboboxOptions(this.wordSearch.value);
+            };
+        }
     }
 
     updatePromptUI() {
@@ -306,15 +372,15 @@ export class UIController {
             this.durationLimitNote.textContent = `Duración recomendada: ${this.currentWord.duration_min}-${this.currentWord.duration_max}s`;
         } else {
             const limits = { isolated: '2-4s', expression: '2-5s', template: '3-7s' };
-            this.durationLimitNote.textContent = `Límite sugerido: ${limits[this.modeSelect.value] || '--'}`;
+            this.durationLimitNote.textContent = `Límite sugerido: ${limits[this.modeSelect.value] || '2-4s'}`;
         }
     }
 
-    // ========== REPETITION PERSISTENCE ==========
     loadRepetitionProgress() {
         if (!this.currentWord) return;
         const id = this.currentWord.label_id || this.currentWord.prompt_id;
-        this.currentRepetition = (this.participantProgress[id] || 0) + 1;
+        const completed = this.participantProgress[id] || 0;
+        this.currentRepetition = Math.min(completed + 1, 10);
     }
 
     saveRepetitionProgress() {
@@ -556,6 +622,9 @@ export class UIController {
         this.showAuthStep('active');
         this.wordSelectorCard.classList.remove('hidden');
         this.saveParticipantToStorage();
+
+        // Actualizar combobox con el progreso del usuario
+        this.renderComboboxOptions(this.wordSearchInput ? this.wordSearchInput.value.trim() : '');
         this.selectResumeWord();
         
         if (this.authHandlers && this.authHandlers.onSessionActive) {
@@ -569,25 +638,23 @@ export class UIController {
     }
 
     selectResumeWord() {
-        if (!this.vocab.length) return;
-        let item = this.vocab.find(v => v.label_id === this.lastLabelId && (this.participantProgress[v.label_id] || 0) < 10);
+        if (!this.vocab || !this.vocab.length) return;
+        let item = this.lastLabelId ? this.vocab.find(v => v.label_id === this.lastLabelId && (this.participantProgress[v.label_id] || 0) < 10) : null;
         if (!item) item = this.vocab.find(v => (this.participantProgress[v.label_id] || 0) < 10);
         if (!item) {
-            this.wordSelect.value = "";
+            if (this.wordSearchInput) this.wordSearchInput.value = "¡Todas las señas completadas!";
+            if (this.wordSelect) this.wordSelect.value = "";
             this.currentWord = null;
             this.promptInstructions.classList.remove('hidden');
             this.promptTextDisplay.textContent = "¡Completaste las 40 señas y sus 10 repeticiones!";
-            this.durationLimitNote.textContent = "Gracias por completar el protocolo.";
+            this.durationLimitNote.textContent = "Gracias por completar el protocolo de captura.";
+            if (this.repetitionCounterText) {
+                this.repetitionCounterText.textContent = "10 de 10 completadas";
+                this.repetitionCounterText.style.color = "var(--success)";
+            }
             return;
         }
-        this.categorySelect.value = item.categoria;
-        const words = this.vocab.filter(v => v.categoria === item.categoria);
-        this.populateWords(words);
-        this.wordSelect.value = item.label_id;
-        this.currentWord = item;
-        this.updatePromptUI();
-        this.loadRepetitionProgress();
-        this.updateRepetitionUI();
+        this.selectWord(item);
     }
 
     loadParticipantFromStorage() {
@@ -764,14 +831,33 @@ export class UIController {
     }
 
     updateRepetitionUI() {
+        if (!this.currentWord) return;
+        const id = this.currentWord.label_id || this.currentWord.prompt_id;
+        const completed = this.participantProgress[id] || 0;
+
+        if (this.repetitionCounterText) {
+            if (completed >= 10) {
+                this.repetitionCounterText.textContent = "10 de 10 (¡Completada!)";
+                this.repetitionCounterText.style.color = "var(--success)";
+            } else {
+                this.repetitionCounterText.textContent = `Repetición ${this.currentRepetition} de 10`;
+                this.repetitionCounterText.style.color = "var(--primary)";
+            }
+        }
+
         this.repetitionCircles.forEach(c => {
             const rep = parseInt(c.dataset.rep);
             c.className = 'circle';
-            if (rep < this.currentRepetition) c.classList.add('completed');
-            if (rep === this.currentRepetition) c.classList.add('active');
+            if (rep <= completed) {
+                c.classList.add('completed');
+            }
+            if (rep === this.currentRepetition && completed < 10) {
+                c.classList.add('active');
+            }
         });
-        if (this.currentRepetition > 10 && this.currentWord) {
-            this.durationLimitNote.textContent = "Completada: 10 de 10 repeticiones guardadas.";
+
+        if (completed >= 10 && this.durationLimitNote) {
+            this.durationLimitNote.textContent = "✓ Seña completada (10 de 10 repeticiones guardadas). Puedes continuar con otra seña.";
         }
     }
 
@@ -779,24 +865,48 @@ export class UIController {
         this.reviewOverlay.classList.add('hidden');
         this.uploadStatusUI.classList.remove('hidden');
         this.uploadProgressBar.style.width = '50%';
-        this.uploadStatusMobile.classList.remove('hidden');
-        this.uploadProgressBarMobile.style.width = '50%';
+        if (this.uploadStatusMobile) this.uploadStatusMobile.classList.remove('hidden');
+        if (this.uploadProgressBarMobile) this.uploadProgressBarMobile.style.width = '50%';
     }
 
     setFinishedState(progress) {
         this.uploadProgressBar.style.width = '100%';
         this.uploadStatusUI.querySelector('.status-text').textContent = "¡Subida exitosa!";
-        this.uploadProgressBarMobile.style.width = '100%';
+        if (this.uploadProgressBarMobile) this.uploadProgressBarMobile.style.width = '100%';
         
         this.applyProgress(progress || {});
-        this.loadRepetitionProgress();
-        this.updateRepetitionUI();
+
+        // Actualizar progreso para la seña actual o avanzar si ya completó las 10
+        if (this.currentWord) {
+            const id = this.currentWord.label_id || this.currentWord.prompt_id;
+            const completed = this.participantProgress[id] || 0;
+            if (completed >= 10) {
+                this.updateRepetitionUI();
+                // Buscar siguiente palabra que no haya completado 10 repeticiones
+                const nextItem = this.vocab.find(v => (this.participantProgress[v.label_id] || 0) < 10);
+                if (nextItem) {
+                    setTimeout(() => {
+                        this.selectWord(nextItem);
+                    }, 1400);
+                }
+            } else {
+                this.loadRepetitionProgress();
+                this.updateRepetitionUI();
+            }
+        } else {
+            this.loadRepetitionProgress();
+            this.updateRepetitionUI();
+        }
+
+        // Actualizar las insignias de progreso en el desplegable
+        this.renderComboboxOptions(this.wordSearchInput ? this.wordSearchInput.value.trim() : '');
+
         this.hidePreview();
 
         setTimeout(() => {
             this.uploadStatusUI.classList.add('hidden');
             this.uploadStatusUI.querySelector('.status-text').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo a Drive...';
-            this.uploadStatusMobile.classList.add('hidden');
+            if (this.uploadStatusMobile) this.uploadStatusMobile.classList.add('hidden');
         }, 3000);
     }
 

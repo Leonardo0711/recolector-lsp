@@ -57,7 +57,7 @@ class TourManager {
                     element: '#wordSelectorCard',
                     popover: {
                         title: '4. Selección de Ítem',
-                        description: 'Elige la categoría y el ítem a grabar. En modos aislados realizaremos hasta 5 repeticiones; en continuo realizaremos grabaciones narrativas.',
+                        description: 'Escribe o despliega la lista para elegir la seña a grabar. Completaremos 10 repeticiones por cada una de las 40 señas.',
                         side: 'bottom',
                         align: 'start'
                     }
