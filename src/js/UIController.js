@@ -435,11 +435,9 @@ export class UIController {
         this.promptInstructions.classList.remove('hidden');
         this.promptTextDisplay.textContent = this.currentWord.prompt_text || this.currentWord.label;
         
-        if (this.currentWord.duration_min) {
-            this.durationLimitNote.textContent = `Duración recomendada: ${this.currentWord.duration_min}-${this.currentWord.duration_max}s`;
-        } else {
-            const limits = { isolated: '2-4s', expression: '2-5s', template: '3-7s' };
-            this.durationLimitNote.textContent = `Límite sugerido: ${limits[this.modeSelect.value] || '2-4s'}`;
+        if (this.durationLimitNote) {
+            this.durationLimitNote.textContent = '';
+            this.durationLimitNote.classList.add('hidden');
         }
     }
 
@@ -919,7 +917,10 @@ export class UIController {
             this.currentWord = null;
             this.promptInstructions.classList.remove('hidden');
             this.promptTextDisplay.textContent = "¡Completaste las 40 señas y sus 10 repeticiones!";
-            this.durationLimitNote.textContent = "Gracias por completar el protocolo de captura.";
+            if (this.durationLimitNote) {
+                this.durationLimitNote.textContent = "Gracias por completar el protocolo de captura.";
+                this.durationLimitNote.classList.remove('hidden');
+            }
             if (this.repetitionCounterText) {
                 this.repetitionCounterText.textContent = "10 de 10 completadas";
                 this.repetitionCounterText.style.color = "var(--success)";
@@ -1186,8 +1187,14 @@ export class UIController {
             }
         });
 
-        if (completed >= 10 && this.durationLimitNote) {
-            this.durationLimitNote.textContent = "✓ Seña completada (10 de 10 repeticiones guardadas). Puedes continuar con otra seña.";
+        if (this.durationLimitNote) {
+            if (completed >= 10) {
+                this.durationLimitNote.textContent = "✓ Seña completada (10 de 10 repeticiones guardadas). Puedes continuar con otra seña.";
+                this.durationLimitNote.classList.remove('hidden');
+            } else {
+                this.durationLimitNote.textContent = "";
+                this.durationLimitNote.classList.add('hidden');
+            }
         }
     }
 
