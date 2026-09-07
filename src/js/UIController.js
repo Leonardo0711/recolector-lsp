@@ -76,6 +76,7 @@ export class UIController {
         this.wordSelectorCard = document.getElementById('wordSelectorCard');
         this.comboboxWrapper = document.getElementById('comboboxWrapper');
         this.wordSearchInput = document.getElementById('wordSearchInput');
+        this.comboboxClearBtn = document.getElementById('comboboxClearBtn');
         this.comboboxToggleBtn = document.getElementById('comboboxToggleBtn');
         this.comboboxDropdown = document.getElementById('comboboxDropdown');
         this.comboboxOptionsList = document.getElementById('comboboxOptionsList');
@@ -219,27 +220,70 @@ export class UIController {
     initCombobox() {
         if (!this.wordSearchInput || !this.comboboxDropdown) return;
 
-        // Open/filter on typing
+        const renderAll = () => {
+            // Mostrar SIEMPRE todas las 40 señas cuando se abre la lista
+            this.renderComboboxOptions('');
+            this.openCombobox();
+            setTimeout(() => {
+                if (this.comboboxOptionsList) {
+                    const selectedEl = this.comboboxOptionsList.querySelector('.combobox-item.selected');
+                    if (selectedEl) {
+                        selectedEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                    }
+                }
+            }, 50);
+        };
+
+        const updateClearBtn = () => {
+            if (this.comboboxClearBtn) {
+                if (this.wordSearchInput.value.trim().length > 0) {
+                    this.comboboxClearBtn.classList.remove('hidden');
+                } else {
+                    this.comboboxClearBtn.classList.add('hidden');
+                }
+            }
+        };
+
+        // Al escribir: filtrar en tiempo real según lo que escribe el usuario
         this.wordSearchInput.addEventListener('input', () => {
             const query = this.wordSearchInput.value.trim();
+            updateClearBtn();
             this.renderComboboxOptions(query);
             this.openCombobox();
         });
 
-        // Open on focus
+        // Al enfocar el input: seleccionar el texto para facilitar reemplazo y mostrar TODAS las señas
         this.wordSearchInput.addEventListener('focus', () => {
-            const query = this.wordSearchInput.value.trim();
-            this.renderComboboxOptions(query);
-            this.openCombobox();
+            this.wordSearchInput.select();
+            renderAll();
         });
 
-        // Toggle button click
+        // Al hacer clic en el input: si está cerrado, abrir mostrando todas las señas
+        this.wordSearchInput.addEventListener('click', () => {
+            if (this.comboboxDropdown.classList.contains('hidden')) {
+                this.wordSearchInput.select();
+                renderAll();
+            }
+        });
+
+        // Botón limpiar (X): borra el texto, enfoca y muestra todas las opciones
+        if (this.comboboxClearBtn) {
+            this.comboboxClearBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.wordSearchInput.value = '';
+                updateClearBtn();
+                renderAll();
+                this.wordSearchInput.focus();
+            });
+        }
+
+        // Botón desplegable (flecha/chevron): SIEMPRE muestra todas las 40 señas
         if (this.comboboxToggleBtn) {
             this.comboboxToggleBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (this.comboboxDropdown.classList.contains('hidden')) {
-                    this.renderComboboxOptions(this.wordSearchInput.value.trim());
-                    this.openCombobox();
+                    renderAll();
+                    this.wordSearchInput.select();
                     this.wordSearchInput.focus();
                 } else {
                     this.closeCombobox();
@@ -247,14 +291,19 @@ export class UIController {
             });
         }
 
-        // Close when clicking outside combobox
+        // Cerrar al hacer clic fuera del combobox
         document.addEventListener('click', (e) => {
             if (this.comboboxWrapper && !this.comboboxWrapper.contains(e.target)) {
                 this.closeCombobox();
+                // Si el usuario borró el texto y no eligió nada, restaurar el nombre de la seña activa
+                if (this.currentWord && this.wordSearchInput && !this.wordSearchInput.value.trim()) {
+                    this.wordSearchInput.value = this.currentWord.label || this.currentWord.prompt_text || '';
+                    updateClearBtn();
+                }
             }
         });
 
-        // Repetition circles click event
+        // Clic en los círculos de repetición (1 al 10)
         this.repetitionCircles.forEach(circle => {
             circle.addEventListener('click', () => {
                 const rep = parseInt(circle.dataset.rep);
@@ -309,8 +358,9 @@ export class UIController {
             const itemEl = document.createElement('div');
             itemEl.className = 'combobox-item';
             const id = item.label_id || item.prompt_id;
-            const completedReps = this.participantProgress[id] || 0;
-            const isSelected = this.currentWord && (this.currentWord.label_id || this.currentWord.prompt_id) === id;
+            const label = item.label || item.prompt_text;
+            const completedReps = this.participantProgress[id] || (label ? this.participantProgress[label] : 0) || 0;
+            const isSelected = this.currentWord && ((this.currentWord.label_id || this.currentWord.prompt_id) === id || this.currentWord.label === item.label);
 
             if (isSelected) {
                 itemEl.classList.add('selected');
@@ -353,6 +403,7 @@ export class UIController {
 
         if (this.wordSearchInput) {
             this.wordSearchInput.value = item.label || item.prompt_text || '';
+            if (this.comboboxClearBtn) this.comboboxClearBtn.classList.remove('hidden');
         }
         if (this.wordSelect) {
             this.wordSelect.value = id;
@@ -395,7 +446,22 @@ export class UIController {
     loadRepetitionProgress() {
         if (!this.currentWord) return;
         const id = this.currentWord.label_id || this.currentWord.prompt_id;
-        const completed = this.participantProgress[id] || 0;
+        const label = this.currentWord.label || this.currentWord.prompt_text;
+        
+        // Buscar en memoria
+        let completed = this.participantProgress[id] || (label ? this.participantProgress[label] : 0) || 0;
+        
+        // Si no está en memoria, verificar en localStorage
+        if (!completed) {
+            try {
+                const localProg = JSON.parse(localStorage.getItem('lsp_word_progress') || '{}');
+                completed = localProg[id] || (label ? localProg[label] : 0) || 0;
+                if (completed) {
+                    this.participantProgress[id] = completed;
+                }
+            } catch (e) {}
+        }
+        
         this.currentRepetition = Math.min(completed + 1, 10);
     }
 
@@ -806,8 +872,20 @@ export class UIController {
     }
 
     applyProgress(progress) {
-        this.participantProgress = progress.by_label || {};
-        this.lastLabelId = progress.last_label_id || null;
+        if (progress && progress.by_label) {
+            this.participantProgress = { ...this.participantProgress, ...progress.by_label };
+        }
+        // Combinar con almacenamiento local para máxima fidelidad
+        try {
+            const localProg = JSON.parse(localStorage.getItem('lsp_word_progress') || '{}');
+            for (const k in localProg) {
+                this.participantProgress[k] = Math.max(this.participantProgress[k] || 0, localProg[k]);
+            }
+        } catch (e) {}
+
+        if (progress && progress.last_label_id) {
+            this.lastLabelId = progress.last_label_id;
+        }
     }
 
     selectResumeWord() {
@@ -815,19 +893,24 @@ export class UIController {
         const savedLabelId = localStorage.getItem('lsp_last_selected_label_id');
         let item = null;
 
+        const getDone = (v) => {
+            const id = v.label_id || v.prompt_id;
+            return this.participantProgress[id] || (v.label ? this.participantProgress[v.label] : 0) || 0;
+        };
+
         // 1. Prioridad: la seña en la que el usuario se quedó en este navegador (< 10 repeticiones)
         if (savedLabelId) {
-            item = this.vocab.find(v => (v.label_id === savedLabelId || v.prompt_id === savedLabelId) && (this.participantProgress[v.label_id] || 0) < 10);
+            item = this.vocab.find(v => (v.label_id === savedLabelId || v.prompt_id === savedLabelId || v.label === savedLabelId) && getDone(v) < 10);
         }
 
         // 2. Si no o ya se completó, usar la última seña registrada del backend
         if (!item && this.lastLabelId) {
-            item = this.vocab.find(v => v.label_id === this.lastLabelId && (this.participantProgress[v.label_id] || 0) < 10);
+            item = this.vocab.find(v => (v.label_id === this.lastLabelId || v.label === this.lastLabelId) && getDone(v) < 10);
         }
 
         // 3. Si no, buscar la primera seña pendiente en el vocabulario
         if (!item) {
-            item = this.vocab.find(v => (this.participantProgress[v.label_id] || 0) < 10);
+            item = this.vocab.find(v => getDone(v) < 10);
         }
 
         if (!item) {
@@ -1134,14 +1217,35 @@ export class UIController {
             }
         }
 
-        // Actualizar progreso para la seña actual o avanzar si ya completó las 10
+        // Actualizar progreso local de la palabra actual
         if (this.currentWord) {
             const id = this.currentWord.label_id || this.currentWord.prompt_id;
+            const label = this.currentWord.label || this.currentWord.prompt_text;
+            
+            // Si el backend no envió by_label, incrementar localmente de forma segura
+            if (!progress || !progress.by_label) {
+                const currentDone = this.participantProgress[id] || (label ? this.participantProgress[label] : 0) || 0;
+                const newDone = Math.min(currentDone + 1, 10);
+                this.participantProgress[id] = newDone;
+                if (label) this.participantProgress[label] = newDone;
+            }
+            
+            // Persistir copia local por palabra
+            try {
+                const localProg = JSON.parse(localStorage.getItem('lsp_word_progress') || '{}');
+                localProg[id] = this.participantProgress[id];
+                if (label) localProg[label] = this.participantProgress[id];
+                localStorage.setItem('lsp_word_progress', JSON.stringify(localProg));
+            } catch (e) {}
+
             const completed = this.participantProgress[id] || 0;
             if (completed >= 10) {
                 this.updateRepetitionUI();
                 // Buscar siguiente palabra que no haya completado 10 repeticiones
-                const nextItem = this.vocab.find(v => (this.participantProgress[v.label_id] || 0) < 10);
+                const nextItem = this.vocab.find(v => {
+                    const vId = v.label_id || v.prompt_id;
+                    return (this.participantProgress[vId] || (v.label ? this.participantProgress[v.label] : 0) || 0) < 10;
+                });
                 if (nextItem) {
                     setTimeout(() => {
                         this.selectWord(nextItem);
@@ -1156,8 +1260,8 @@ export class UIController {
             this.updateRepetitionUI();
         }
 
-        // Actualizar las insignias de progreso en el desplegable
-        this.renderComboboxOptions(this.wordSearchInput ? this.wordSearchInput.value.trim() : '');
+        // Actualizar insignias de todas las señas en el desplegable
+        this.renderComboboxOptions('');
 
         this.hidePreview();
 

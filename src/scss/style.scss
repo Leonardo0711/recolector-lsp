@@ -727,12 +727,34 @@ body {
       color: var(--text-main);
       font-size: 0.92rem;
       font-weight: 600;
-      padding: 10px 38px 10px 36px;
+      padding: 10px 66px 10px 36px;
       letter-spacing: 0.02em;
 
       &::placeholder {
         color: var(--text-muted);
         font-weight: 400;
+      }
+    }
+
+    .combobox-clear-btn {
+      position: absolute;
+      right: 36px;
+      width: 22px;
+      height: 22px;
+      background: rgba(255, 255, 255, 0.08);
+      border: none;
+      color: var(--text-muted);
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
       }
     }
 
@@ -768,7 +790,7 @@ body {
     top: calc(100% + 6px);
     left: 0;
     width: 100%;
-    max-height: 250px;
+    max-height: 290px;
     background: var(--bg-panel);
     border: 1px solid var(--bg-card-border);
     border-radius: var(--radius-sm);
@@ -777,6 +799,7 @@ body {
     overflow-y: auto;
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
+    scroll-behavior: smooth;
 
     &::-webkit-scrollbar {
       width: 5px;
@@ -804,6 +827,7 @@ body {
       color: var(--text-main);
       cursor: pointer;
       transition: all 0.15s ease;
+      border-left: 3px solid transparent;
 
       .item-main {
         display: flex;
@@ -844,13 +868,14 @@ body {
       }
 
       &:hover {
-        background: rgba(14, 165, 233, 0.15);
+        background: rgba(14, 165, 233, 0.12);
         color: var(--primary);
       }
 
       &.selected {
-        background: rgba(14, 165, 233, 0.22);
+        background: rgba(14, 165, 233, 0.18);
         color: var(--primary);
+        border-left-color: var(--primary);
       }
     }
 
