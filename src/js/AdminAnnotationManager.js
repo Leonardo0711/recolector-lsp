@@ -320,16 +320,19 @@ export class AdminAnnotationManager {
                     </nav>
 
                     <div class="db-user-actions">
-                        <span class="user-alias"><i class="fa-solid fa-circle-user"></i> ${this.session.user.alias}</span>
+                        <div class="user-chip" title="Usuario conectado: ${this.session.user.alias}">
+                            <i class="fa-solid fa-circle-user"></i>
+                            <span class="user-name">${this.session.user.alias}</span>
+                        </div>
                         <button class="theme-switch db-theme-switch" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">
                             <span class="switch-stars"></span>
                             <span class="switch-knob"><i class="fa-solid ${(document.documentElement.getAttribute('data-theme') || 'dark') === 'light' ? 'fa-sun' : 'fa-moon'} theme-icon"></i></span>
                         </button>
-                        <button class="btn btn-secondary" id="btnBackToGrabador" title="Volver al recolector público">
-                            <i class="fa-solid fa-arrow-left"></i> Volver al recolector
+                        <button class="btn btn-secondary btn-back-recolector" id="btnBackToGrabador" title="Volver al recolector público">
+                            <i class="fa-solid fa-arrow-left"></i> <span class="btn-text">Volver</span>
                         </button>
-                        <button class="btn btn-danger" id="btnLogout">
-                            <i class="fa-solid fa-right-from-bracket"></i> Salir
+                        <button class="btn btn-danger btn-logout-admin" id="btnLogout" title="Cerrar sesión">
+                            <i class="fa-solid fa-right-from-bracket"></i> <span class="btn-text">Salir</span>
                         </button>
                     </div>
                 </header>
